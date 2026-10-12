@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#10131b">
+  <meta name="description" content="Make a compact, reviewable map of a codebase before giving a task to a browser-based coding assistant. A free, local-first Python CLI.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Codebase Brief — give your coding assistant a map">
+  <meta property="og:description" content="Turn a repository and a coding task into a small, reviewable Markdown brief. Local-first, open source, and free.">
+  <meta property="og:image" content="https://raw.githubusercontent.com/mohamed1111111m/codebase-brief/main/docs/images/social-preview.png">
+  <title>Codebase Brief — give your coding assistant a map</title>
+  <style>
+    :root { color-scheme: dark; --bg:#10131b; --panel:#171c27; --ink:#f4f5f7; --muted:#abb3c4; --line:#2a3241; --cyan:#73e0d0; --violet:#a895ff; --gold:#f4c96b; }
+    * { box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
+    body { margin:0; background:radial-gradient(ellipse at 50% -20%,#25304a 0,transparent 55%),var(--bg); color:var(--ink); font:16px/1.6 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif; }
+    a { color:var(--cyan); text-underline-offset:4px; }
+    a:hover { color:#b2fff4; }
+    .wrap { width:min(1080px,calc(100% - 40px)); margin:auto; }
+    header { display:flex; align-items:center; justify-content:space-between; padding:22px 0; border-bottom:1px solid var(--line); }
+    .brand { display:flex; align-items:center; gap:11px; color:var(--ink); text-decoration:none; font-weight:750; letter-spacing:-.02em; }
+    .mark { display:grid; place-items:center; width:34px; height:34px; border-radius:11px; color:#10131b; background:linear-gradient(135deg,var(--cyan),var(--violet)); font-weight:900; }
+    nav { display:flex; gap:24px; align-items:center; font-size:14px; }
+    nav a { color:var(--muted); text-decoration:none; }
+    .hero { display:grid; grid-template-columns:1.02fr .98fr; gap:54px; align-items:center; padding:76px 0 72px; }
+    .eyebrow { display:inline-flex; gap:9px; align-items:center; color:var(--cyan); font-size:13px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; }
+    .dot { width:8px; height:8px; border-radius:50%; background:var(--cyan); box-shadow:0 0 14px var(--cyan); }
+    h1 { max-width:620px; margin:18px 0; font-size:clamp(42px,6vw,68px); line-height:1.04; letter-spacing:-.055em; }
+    h1 span { color:var(--cyan); }
+    .lead { max-width:570px; color:var(--muted); font-size:18px; }
+    .actions { display:flex; flex-wrap:wrap; gap:12px; margin:28px 0 15px; }
+    .button { display:inline-flex; align-items:center; justify-content:center; min-height:48px; padding:0 18px; border:1px solid var(--line); border-radius:10px; color:var(--ink); font-weight:700; text-decoration:none; background:#1a2030; }
+    .button.primary { border:0; color:#0e1519; background:linear-gradient(100deg,var(--cyan),#8cebd7); }
+    .note { color:var(--muted); font-size:13px; }
+    .terminal { overflow:hidden; border:1px solid #394255; border-radius:16px; background:#0b0e14; box-shadow:0 25px 80px #0008; }
+    .termbar { display:flex; gap:7px; align-items:center; padding:13px 16px; border-bottom:1px solid #252b38; color:#a7afc0; font-size:12px; }
+    .light { width:9px; height:9px; border-radius:50%; background:#ff766e; }.light:nth-child(2){background:#f6c76a}.light:nth-child(3){background:#66d8aa}
+    .termbar span:last-child { margin-left:6px; }
+    pre { overflow:auto; margin:0; padding:23px; color:#d8dce6; font:13px/1.85 ui-monospace,SFMono-Regular,Consolas,monospace; }
+    .prompt { color:var(--cyan); }.flag { color:var(--violet); }.comment { color:#8791a3; }.result { color:var(--gold); }
+    .section { padding:65px 0; border-top:1px solid var(--line); }
+    h2 { margin:0 0 10px; font-size:clamp(28px,4vw,38px); line-height:1.15; letter-spacing:-.04em; }
+    .sub { max-width:680px; margin:0 0 28px; color:var(--muted); }
+    .steps { display:grid; grid-template-columns:repeat(3,1fr); gap:15px; }
+    .card { padding:22px; border:1px solid var(--line); border-radius:14px; background:linear-gradient(150deg,#1a2030,#141923); }
+    .num { color:var(--violet); font:700 13px ui-monospace,monospace; }
+    h3 { margin:10px 0 5px; font-size:18px; }
+    .card p { margin:0; color:var(--muted); font-size:14px; }
+    code { color:#d5ccff; font: .94em ui-monospace,SFMono-Regular,Consolas,monospace; }
+    .example { display:grid; grid-template-columns:.85fr 1.15fr; gap:20px; align-items:center; }
+    .example img { display:block; width:100%; border:1px solid var(--line); border-radius:12px; }
+    .guardrails { display:flex; flex-wrap:wrap; gap:10px; margin-top:20px; }
+    .pill { padding:7px 11px; border:1px solid var(--line); border-radius:999px; color:#cbd3e2; font-size:13px; }
+    .closing { padding:45px 28px; border:1px solid #3a4356; border-radius:18px; background:linear-gradient(125deg,#1d2937,#201e34); text-align:center; }
+    .closing p { color:var(--muted); }
+    footer { display:flex; flex-wrap:wrap; justify-content:space-between; gap:10px; padding:25px 0 34px; color:var(--muted); font-size:13px; }
+    @media(max-width:760px){ .hero,.example{grid-template-columns:1fr;gap:28px;padding:50px 0}.steps{grid-template-columns:1fr}.hero{padding-bottom:48px}nav{gap:12px}nav a:nth-child(2){display:none} }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <a class="brand" href="#top"><span class="mark">B</span><span>Codebase Brief</span></a>
+      <nav aria-label="Main navigation"><a href="#how">How it works</a><a href="https://github.com/mohamed1111111m/codebase-brief#privacy-and-limitations">Privacy & limits</a><a href="https://github.com/mohamed1111111m/codebase-brief">GitHub ↗</a></nav>
+    </header>
+    <main id="top">
+      <section class="hero">
+        <div>
+          <div class="eyebrow"><span class="dot"></span>A small map before the coding session</div>
+          <h1>Give your coding assistant <span>a map</span> of the repo.</h1>
+          <p class="lead">Starting in a browser chat that can’t see your local files? Codebase Brief turns a repository and a task into a short Markdown guide—with selected excerpts and paths you can check.</p>
+          <div class="actions"><a class="button primary" href="https://pypi.org/project/codebase-brief/">Install free with pipx</a><a class="button" href="https://github.com/mohamed1111111m/codebase-brief">View the source</a></div>
+          <p class="note">Open source · Python 3.10+ · runs locally · no AI account</p>
+        </div>
+        <div class="terminal" aria-label="Example terminal command">
+          <div class="termbar"><i class="light"></i><i class="light"></i><i class="light"></i><span>Terminal · your project folder</span></div>
+          <pre><span class="comment"># Install once</span>
+<span class="prompt">$</span> pipx install codebase-brief
+
+<span class="comment"># Make a brief for a task</span>
+<span class="prompt">$</span> brief . <span class="flag">--task</span> <span class="result">"Trace the login flow"</span>
+
+<span class="comment"># Review the suggested files, then paste</span>
+<span class="prompt">$</span> brief . <span class="flag">--task</span> <span class="result">"Trace the login flow"</span> <span class="flag">--copy</span></pre>
+        </div>
+      </section>
+
+      <section class="section" id="how">
+        <h2>Three steps, and you stay in control.</h2>
+        <p class="sub">It gathers a useful starting point. You review the file suggestions before anything goes to your assistant.</p>
+        <div class="steps">
+          <article class="card"><span class="num">01 / POINT</span><h3>Choose a project and task</h3><p>Give it a local folder and a plain-language job, like “find where login errors are handled.”</p></article>
+          <article class="card"><span class="num">02 / REVIEW</span><h3>Keep or change the files</h3><p>See which files it picked and why. Keep the choices, toggle files, or make an overview without excerpts.</p></article>
+          <article class="card"><span class="num">03 / USE</span><h3>Copy the brief into your chat</h3><p>Get a Markdown guide with repository notes, selected snippets, and paths back to their sources.</p></article>
+        </div>
+      </section>
+
+      <section class="section example">
+        <div><h2>See what comes out.</h2><p class="sub">The brief is compact and source-linked, so you can verify the context instead of trusting a mystery score.</p><div class="guardrails"><span class="pill">No AI API calls</span><span class="pill">No account or upload</span><span class="pill">You choose what to paste</span><span class="pill">Best-effort secret filtering</span></div></div>
+        <img src="docs/images/sample-context-brief.png" alt="Example of a generated repository context brief with selected files and source paths" loading="lazy">
+      </section>
+
+      <section class="section">
+        <div class="closing"><h2>Try it on a repo you already know.</h2><p>Then tell me one file it missed—or one suggestion that didn’t belong.</p><div class="actions" style="justify-content:center"><a class="button primary" href="https://github.com/mohamed1111111m/codebase-brief#get-started">Get started</a><a class="button" href="https://github.com/mohamed1111111m/codebase-brief/issues">Give feedback</a></div></div>
+      </section>
+    </main>
+    <footer><span>Made by Mohamed Maggy · MIT License</span><span><a href="https://github.com/mohamed1111111m/codebase-brief">Source on GitHub</a> · <a href="https://pypi.org/project/codebase-brief/">PyPI</a></span></footer>
+  </div>
+</body>
+</html>
