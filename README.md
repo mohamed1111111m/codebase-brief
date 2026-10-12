@@ -17,6 +17,17 @@ The brief is a starting map, not an answer or a complete copy of your codebase. 
 
 The runtime has no third-party Python dependencies. Building distributions uses setuptools.
 
+## Try it without cloning
+
+Install GitHub's current version into an active Python environment, then start the guided menu:
+
+```sh
+python -m pip install git+https://github.com/mohamed1111111m/codebase-brief.git
+brief
+```
+
+For a durable install, create and activate a virtual environment first. The commands below install from a local clone so you can also read or modify the source.
+
 ## Install in an isolated environment
 
 ```powershell
