@@ -4,11 +4,11 @@
 
 **Name:** Codebase Brief
 
-**Tagline (45/60 characters):** Give your coding assistant a map of your repo
+**Tagline (47/60 characters):** A repo map for coding chats without file access
 
-**Short description (under 260 characters):** A local Python CLI that turns a coding task and a repository into a compact Markdown brief with relevant files, recent Git changes, and source paths. No AI calls or account required.
+**Short description (under 260 characters):** Turn a local repo and coding task into a short, reviewable Markdown map for browser-based AI chats. Inspect suggested files, copy useful excerpts and source paths. Free, open source, no AI calls.
 
-**Product URL:** https://github.com/mohamed1111111m/codebase-brief
+**Product URL:** https://mohamed1111111m.github.io/codebase-brief/
 
 **Topics:** Developer Tools, Open Source, Artificial Intelligence
 
@@ -16,13 +16,13 @@
 
 ## Maker's first comment
 
-I made Codebase Brief because I kept starting coding-assistant sessions by explaining the same repository basics and hunting down files to paste in.
+I made Codebase Brief for the times I use a browser-based coding assistant that can’t inspect my local working tree. I wanted a reviewable way to bring it enough repository context to start a task.
 
 The CLI reads a local repo, asks what you want to do, suggests a small set of files with reasons, and creates a Markdown brief with excerpts and paths you can check. It can use recent Git history and an optional base ref to prioritize changed files. It does not call an AI service or upload the repository.
 
 This is an early tool. File selection is heuristic, so it can miss relevant code or include noise. I’d love feedback from developers who try it on a repository they know: what useful file did it miss, and what did it include unnecessarily?
 
-Install instructions, screenshots, tests, and limitations are in the README: https://github.com/mohamed1111111m/codebase-brief
+Try it and see screenshots: https://mohamed1111111m.github.io/codebase-brief/ · Source and full details: https://github.com/mohamed1111111m/codebase-brief
 
 ## Gallery assets
 
