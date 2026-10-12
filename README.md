@@ -1,5 +1,7 @@
 # Codebase Brief
 
+**Project site:** [codebase-brief](https://mohamed1111111m.github.io/codebase-brief/)
+
 [![Tests](https://github.com/mohamed1111111m/codebase-brief/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/mohamed1111111m/codebase-brief/actions/workflows/test.yml)
 [![Install from PyPI](https://img.shields.io/badge/Install%20from-PyPI-3775A9?logo=pypi&logoColor=white)](https://pypi.org/project/codebase-brief/)
 [![PyPI version](https://img.shields.io/pypi/v/codebase-brief.svg)](https://pypi.org/project/codebase-brief/)
