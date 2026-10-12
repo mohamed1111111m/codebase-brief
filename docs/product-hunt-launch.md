@@ -4,7 +4,7 @@
 
 **Name:** Codebase Brief
 
-**Tagline (52/60 characters):** Give your coding assistant a map of your repo
+**Tagline (45/60 characters):** Give your coding assistant a map of your repo
 
 **Short description (under 260 characters):** A local Python CLI that turns a coding task and a repository into a compact Markdown brief with relevant files, recent Git changes, and source paths. No AI calls or account required.
 
