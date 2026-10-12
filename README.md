@@ -1,6 +1,8 @@
 # Codebase Brief
 
 [![Tests](https://github.com/mohamed1111111m/codebase-brief/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/mohamed1111111m/codebase-brief/actions/workflows/test.yml)
+[![Install from PyPI](https://img.shields.io/badge/Install%20from-PyPI-3775A9?logo=pypi&logoColor=white)](https://pypi.org/project/codebase-brief/)
+[![PyPI version](https://img.shields.io/pypi/v/codebase-brief.svg)](https://pypi.org/project/codebase-brief/)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![MIT License](https://img.shields.io/badge/license-MIT-8A63D2.svg)](LICENSE)
 
@@ -22,7 +24,7 @@ The first image is a terminal-style rendering of the app's actual numbered menu.
 
 You need Python 3.10 or newer. Git is optional, but it enables recent-history and base-diff details.
 
-Once the first PyPI release is available, install it in a virtual environment and launch the menu:
+Install it from PyPI in a virtual environment, then launch the menu:
 
 ```powershell
 python -m venv .venv
@@ -31,7 +33,7 @@ python -m pip install --upgrade codebase-brief
 codebase-brief
 ```
 
-Until then, install the current version directly from GitHub:
+To try the latest code from GitHub instead:
 
 ```powershell
 python -m venv .venv
