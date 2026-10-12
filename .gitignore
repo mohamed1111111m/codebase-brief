@@ -1,0 +1,22 @@
+# Python bytecode and test caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+
+# Build and package metadata
+build/
+dist/
+*.egg-info/
+
+# Local environments
+.venv/
+venv/
+env/
+
+# Generated context packs
+context.md
+
+# Private working prompt; not part of the public product
+CLAUDE_PROJECT_PROMPT.md
+

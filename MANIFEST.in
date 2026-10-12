@@ -1,0 +1,6 @@
+include README.md LICENSE CHANGELOG.md CONTRIBUTING.md
+recursive-include context_inject *.py
+recursive-include tests *.py
+exclude CLAUDE_PROJECT_PROMPT.md context.md
+global-exclude __pycache__ *.py[cod]
+
