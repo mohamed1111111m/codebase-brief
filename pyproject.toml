@@ -26,6 +26,11 @@ classifiers = [
     "Topic :: Software Development",
 ]
 
+[project.urls]
+Homepage = "https://github.com/mohamed1111111m/codebase-brief"
+Repository = "https://github.com/mohamed1111111m/codebase-brief"
+Issues = "https://github.com/mohamed1111111m/codebase-brief/issues"
+
 [project.scripts]
 brief = "context_inject.cli:main"
 codebase-brief = "context_inject.cli:main"
