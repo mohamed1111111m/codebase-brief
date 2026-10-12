@@ -42,7 +42,7 @@ SECRET_DIRS = {".aws", ".azure", ".gcloud", ".kube", ".ssh", ".terraform"}
 LOCAL_NOTES_NAMES = {"context.md", "claude_project_prompt.md"}
 SECRET_PATTERNS = (
     re.compile(
-        r"""(?i)(\b(?:[\w.-]+[_-])?(?:api[_-]?key|access[_-]?token|auth(?:[_-]?token|orization)?|oauth[_-]?token|token|refresh[_-]?token|client[_-]?secret|secret|password|passwd|credential|private[_-]?key|account[_-]?key|storage[_-]?key|signing[_-]?key)(?:[_-][\w.-]+)?\b["']?\s*[:=]\s*)[^\r\n]*"""
+        r"""(?i)(\b(?:[\w.-]+[_-])?(?:api[_-]?key|access[_-]?token|auth(?:[_-]?token|orization)?|oauth[_-]?token|token|refresh[_-]?token|client[_-]?secret|secret|password|passwd|credential|private[_-]?key|account[_-]?key|storage[_-]?key|signing[_-]?key)(?:[_-][\w.-]+)?\b["']?\s*(?:=\s*|:\s*))(?:(?:"[^"\r\n]*"|'[^'\r\n]*')|(?=[A-Za-z0-9_+/=-]{12,}(?:\s|[,}\]]|$))(?=[A-Za-z0-9_+/=-]*(?:\d|[_+/=-]))[A-Za-z0-9_+/=-]{12,})"""
     ),
     re.compile(r"(?i)(\bBearer\s+)[A-Za-z0-9._~+/=-]{8,}"),
     re.compile(r"(?i)([a-z][a-z0-9+.-]*://[^:/\s@]+:)[^@\s/]+(@)"),

@@ -214,6 +214,22 @@ class ContextInjectTests(unittest.TestCase):
         self.assertIn("authors = Mohamed", redact("authors = Mohamed"))
         self.assertIn("tokenizer = helper", redact("tokenizer = helper"))
 
+    def test_redaction_preserves_code_that_mentions_password_fields(self):
+        source = (
+            "def sign_in(email: str, password: str) -> str:\n"
+            "    if not email or not password:\n"
+            "        raise ValueError('Email and password are required')\n"
+            "    return password_hash(password)\n"
+            "password = 'actual-secret-value'\n"
+            "api_key: 'quoted-api-secret'\n"
+        )
+        sanitized = redact(source)
+        self.assertIn("def sign_in(email: str, password: str) -> str:", sanitized)
+        self.assertIn("if not email or not password:", sanitized)
+        self.assertIn("password_hash(password)", sanitized)
+        self.assertNotIn("actual-secret-value", sanitized)
+        self.assertNotIn("quoted-api-secret", sanitized)
+
     def test_known_credential_files_are_excluded(self):
         self.put(".npmrc", "//registry.example/:_authToken=private\n")
         self.put(".aws/credentials", "aws_secret_access_key=private\n")

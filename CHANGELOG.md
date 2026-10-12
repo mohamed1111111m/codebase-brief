@@ -8,5 +8,6 @@
 - Follow one level of local Python and JavaScript/TypeScript imports; allow approximate token budgets and clipboard handoff to any coding assistant.
 - Format generated briefs with plain-language section titles, readable documentation excerpts, and code fences only for source/configuration where useful.
 - Exclude common credential files and Git-ignored untracked files, reject credential-named or external symlinks, redact common secret formats, and keep source excerpts within fixed limits.
+- Preserve normal typed password parameters and conditions in source excerpts while redacting quoted credential assignments.
 - Package the CLI as `codebase-brief`, retaining `context-inject` as a compatibility command.
 
