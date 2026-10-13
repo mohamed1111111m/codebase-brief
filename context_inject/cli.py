@@ -783,7 +783,8 @@ def gather(
         if excerpt:
             content, truncated = excerpt
             already_covered.add(doc)
-            summary.append(f"From {doc} (formatting simplified)\n{excerpt_for_brief(doc, compact(content, 1100))}" + ("\nMore of this file was left out to keep the brief short." if truncated and len(content) <= 1100 else ""))
+            summary_limit = min(1100, max(350, budget_tokens // 2)) if budget_tokens < 1500 else 1100
+            summary.append(f"From {doc} (formatting simplified)\n{excerpt_for_brief(doc, compact(content, summary_limit))}" + ("\nMore of this file was left out to keep the brief short." if truncated and len(content) <= summary_limit else ""))
     if not summary:
         summary.append("No recognized README or overview document was found.")
     sections.append(("Project overview", summary))
@@ -828,7 +829,8 @@ def gather(
             key = ["The selected files are already included above, so they are not repeated here."]
         else:
             key = ["No safe, readable key files were selected."]
-    sections.append(("Files that may help", key))
+    key_section = ("Files that may help", key)
+    sections.append(key_section)
 
     gaps: list[str] = []
     if not is_git:
@@ -848,11 +850,28 @@ def gather(
         "Ask before making broad or destructive changes.",
     ]))
 
+    if budget_tokens < 1500:
+        # At small budgets, task-relevant excerpts matter more than a long
+        # manifest or commit list. Keep the overview, then show code first.
+        sections.remove(key_section)
+        sections.insert(1, key_section)
+
     task_text = redact(task)
-    task_truncated = len(task_text) > 1000
+    fixed_overhead = len(
+        "Codebase Brief\n\nTask\n\n"
+        "Instruction for the AI assistant\n"
+        "Answer the Task above using this brief as project context. If you need more evidence, ask for the specific file instead of guessing.\n\n"
+    )
+    task_limit = max(40, min(1000, max_chars - fixed_overhead - 340))
+    task_truncated = len(task_text) > task_limit
     if task_truncated:
-        task_text = task_text[:960].rsplit(" ", 1)[0] + " [task truncated]"
-    fixed = f"Codebase Brief\n\nTask\n{task_text}\n\n"
+        marker = " [task truncated]"
+        task_text = task_text[:task_limit - len(marker)].rsplit(" ", 1)[0] + marker
+    fixed = (
+        f"Codebase Brief\n\nTask\n{task_text}\n\n"
+        "Instruction for the AI assistant\n"
+        "Answer the Task above using this brief as project context. If you need more evidence, ask for the specific file instead of guessing.\n\n"
+    )
     output = fixed
     omitted = task_truncated
     for heading, blocks in sections:

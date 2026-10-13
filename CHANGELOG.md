@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add a clear instruction for the receiving assistant to answer the task using the brief as context.
+- Prioritize task-relevant source excerpts ahead of stack details and Git history when the requested budget is small.
 - Let users add a safe repository file by path and print a copyable summary of reviewed file selections.
 - Print review feedback after the generated brief, and prioritize direct local importers of files changed since `--base`.
 - Resolve literal Python dynamic imports and simple JS/TS path aliases when tracing imports.

@@ -90,7 +90,7 @@ To copy the result directly to your clipboard, use `--copy` instead of `--output
 codebase-brief "C:\work\my-app" --task "Find the login flow" --copy
 ```
 
-The generated Markdown is a starting map for your assistant, not a complete copy or analysis of the repository. Review it, then paste it into the coding assistant where you want to work.
+The generated Markdown is a starting map for your assistant, not a complete copy or analysis of the repository. Review it, then paste the whole brief into the coding assistant where you want to work. It tells the assistant to answer the **Task** at the top using the brief as context. Codebase Brief prepares the handoff; the AI chat does the analysis or coding.
 
 ## What it includes
 
