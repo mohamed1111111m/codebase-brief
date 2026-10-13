@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.3
+
+- Find task-matching snippets deeper inside selected source files and show their line ranges instead of always starting at the file's beginning.
+- Keep excerpt reads bounded and apply the existing secret redaction before including source snippets.
+
 ## 0.1.2
 
 - Add `brief --demo`, which generates a real example brief from temporary sample files without reading or modifying the user's project.

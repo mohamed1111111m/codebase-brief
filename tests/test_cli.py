@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from context_inject.cli import DEFAULT_BUDGET_TOKENS, MAX_CHARS, MAX_FILE_BYTES, MAX_KEY_FILES, choose_files, compact, copy_to_clipboard, gather, interactive, local_imports, main, read_excerpt, redact, review_feedback, safe_path, suggest_file_details, suggest_files
+from context_inject.cli import DEFAULT_BUDGET_TOKENS, MAX_CHARS, MAX_FILE_BYTES, MAX_KEY_FILES, choose_files, compact, copy_to_clipboard, gather, interactive, local_imports, main, read_excerpt, read_task_excerpt, redact, review_feedback, safe_path, suggest_file_details, suggest_files
 
 
 class ContextInjectTests(unittest.TestCase):
@@ -74,6 +74,21 @@ class ContextInjectTests(unittest.TestCase):
         self.assertIn("def validate_checkout", key_files)
         self.assertLess(output.index("Files that may help"), output.index("Technology and commands"))
         self.assertLessEqual(len(output), 1000 * 4)
+
+    def test_task_excerpt_finds_relevant_function_beyond_file_prefix(self):
+        filler = "\n".join(f"def unrelated_{index}(): return {index}" for index in range(180))
+        source = filler + "\n\ndef build_demo_brief():\n    return gather(sample_files, task)\n"
+        self.put("src/app.py", source)
+
+        excerpt = read_task_excerpt(
+            self.root, "src/app.py",
+            "Explain how the built-in demo creates a sample context brief",
+        )
+
+        self.assertIsNotNone(excerpt)
+        self.assertIn("def build_demo_brief", excerpt)
+        self.assertIn("return gather(sample_files, task)", excerpt)
+        self.assertNotIn("def unrelated_0", excerpt)
 
     def test_excerpt_shortening_stops_on_a_word_boundary(self):
         excerpt = compact("This is a long sentence that should end on a complete word. " * 3, 90)
@@ -486,7 +501,7 @@ class ContextInjectTests(unittest.TestCase):
         plain = __import__("re").sub(r"\x1b\[[0-9;]*m", "", output.getvalue())
         self.assertIn("CODEBASE", plain)
         self.assertIn("BRIEF", plain)
-        self.assertIn("v0.1.2", plain)
+        self.assertIn("v0.1.3", plain)
         self.assertIn("Meet Briefy - your repo guide", plain)
         self.assertIn("WHAT THIS DOES", plain)
         self.assertIn("Makes a short guide to your project for an AI coding assistant", plain)

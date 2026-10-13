@@ -24,7 +24,7 @@ MAX_KEY_FILES = 12
 MAX_SELECTION_CHOICES = 30
 MAX_DISCOVERED_FILES = 20_000
 IMPORT_SUFFIXES = {".py", ".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs", ".mts", ".cts"}
-VERSION = "0.1.2"
+VERSION = "0.1.3"
 MANIFESTS = (
     "package.json", "pyproject.toml", "requirements.txt", "Cargo.toml",
     "go.mod", "Gemfile", "composer.json", "pom.xml",
@@ -201,6 +201,103 @@ def read_excerpt(root: Path, relative: str, max_bytes: int = MAX_FILE_BYTES) -> 
 
 def task_words(task: str) -> set[str]:
     return {word.lower() for word in re.findall(r"[A-Za-z][A-Za-z0-9_-]{2,}", task)}
+
+
+_TASK_STOP_WORDS = {
+    "about", "after", "also", "and", "are", "does", "from", "give", "help",
+    "how", "into", "its", "make", "show", "that", "the", "this", "what", "with",
+}
+
+
+def read_task_excerpt(
+    root: Path, relative: str, task: str, limit: int = 1050,
+    max_bytes: int = 96_000,
+) -> str | None:
+    """Find compact, task-related source windows, including later definitions.
+
+    File ranking alone is not enough: returning only the first lines of a large
+    file can omit the function that made it relevant. Reads remain bounded and
+    pass through the same path and secret safeguards as ordinary excerpts.
+    """
+    path = safe_path(root, relative)
+    if path is None:
+        return None
+    try:
+        with path.open("rb") as source:
+            raw = source.read(max_bytes + 1)
+    except OSError:
+        return None
+    if b"\0" in raw[:4096]:
+        return None
+
+    truncated = len(raw) > max_bytes
+    text = raw[:max_bytes].decode("utf-8", errors="replace")
+    all_lines = text.splitlines()
+    if not all_lines:
+        return None
+    lines = [line[:500] for line in all_lines[:1500]]
+    truncated = truncated or len(all_lines) > len(lines) or any(len(line) > 500 for line in all_lines[:1500])
+    terms = {term for term in task_words(task) if term not in _TASK_STOP_WORDS}
+    # Split snake_case and hyphenated identifiers so "demo" can match
+    # generate_demo_brief without requiring an exact function-name query.
+    tokenized_lines = [
+        {part.lower() for part in re.findall(r"[A-Za-z][A-Za-z0-9]*", line)}
+        for line in lines
+    ]
+    frequencies = {
+        term: sum(term in line_terms for line_terms in tokenized_lines)
+        for term in terms
+    }
+    scores: list[float] = []
+    for line_terms in tokenized_lines:
+        scores.append(sum(
+            1 + math.log((len(lines) + 1) / (frequencies[term] + 1))
+            for term in terms if term in line_terms
+        ))
+    for index, line in enumerate(lines):
+        if scores[index] and re.match(r"\s*(?:async\s+)?(?:def|class)\s+", line):
+            # In source files, a matching function/class declaration is a
+            # stronger anchor than a help string that merely mentions the task.
+            scores[index] += 8
+
+    if not any(scores):
+        return compact(redact("\n".join(lines)), limit)
+
+    # Make short windows around the strongest matching lines. Merge overlaps,
+    # then take the best windows until the excerpt budget is used.
+    candidates = sorted(range(len(lines)), key=lambda index: (-scores[index], index))
+    windows: list[tuple[int, int]] = []
+    for index in candidates:
+        if scores[index] == 0:
+            break
+        start, end = max(0, index - 4), min(len(lines), index + 11)
+        if any(start <= old_end and end >= old_start for old_start, old_end in windows):
+            continue
+        windows.append((start, end))
+    selected: list[tuple[int, int, str]] = []
+    used = 0
+    for start, end in windows:
+        body = "\n".join(lines[start:end]).strip()
+        snippet = f"Lines {start + 1}–{end}:\n{body}"
+        if not body:
+            continue
+        remaining = limit - used
+        if remaining <= 0:
+            break
+        if len(snippet) > remaining:
+            break
+        selected.append((start, end, snippet))
+        used += len(snippet) + 2
+    if not selected:
+        return compact("\n".join(lines), limit)
+
+    selected.sort(key=lambda item: item[0])
+    result = "\n…\n".join(snippet for _start, _end, snippet in selected)
+    if truncated:
+        result += "\nMore of this file was left out to keep the brief short."
+    elif len(selected) < len(windows):
+        result += "\nOther matching sections were left out to keep the brief short."
+    return redact(result)
 
 
 def discover_files(root: Path) -> list[str]:
@@ -816,12 +913,14 @@ def gather(
             if label and label != "additional project file":
                 key.append(f"{relative} is already included above; it was also {label}.")
             continue
-        excerpt = read_excerpt(root, relative)
+        excerpt = read_task_excerpt(root, relative, task)
+        if excerpt is None:
+            fallback = read_excerpt(root, relative)
+            excerpt = fallback[0] if fallback else None
         if excerpt:
-            content, truncated = excerpt
-            content = compact(content, 1050)
+            content = compact(excerpt, 1050)
             label = reasons.get(relative, "selected by project signals")
-            shortened_note = "" if "Some lines were left out" in content else ("\nMore of this file was left out to keep the brief short." if truncated else "")
+            shortened_note = "" if "Some lines were left out" in content or "More of this file was left out" in content else ""
             key.append(f"{relative} — {label}\n{excerpt_for_brief(relative, content)}" + shortened_note)
     if not key:
         if selected_files is not None and not key_files:

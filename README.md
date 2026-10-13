@@ -28,7 +28,7 @@ The first image is a terminal-style rendering of the app's actual numbered menu.
 
 You need Python 3.10 or newer. Git is optional, but required for recent-history and base-diff details.
 
-The current PyPI release is `0.1.2` and includes the review-feedback summary, importer-aware `--base` selection, and a sample demo. Install it with `pipx`:
+The current PyPI release is `0.1.3` and includes the review-feedback summary, importer-aware `--base` selection, and a sample demo. Install it with `pipx`:
 
 ```powershell
 pipx install codebase-brief
@@ -64,6 +64,8 @@ When the menu opens, it uses the folder you launched it from as the starting pro
 - **0 — Exit:** Close the menu.
 
 In plain terms, Codebase Brief makes a small guide to a project so an AI coding assistant can get oriented before helping with a task. It does not write or fix code. It reads project information locally and prepares a guide for you to review and share.
+
+For selected source files, it looks for code near words in your task and labels each excerpt with its source line range. This is a bounded, best-effort search: if it finds no clear match, it falls back to a general excerpt. Check the cited lines in your editor before relying on them.
 
 Before generating the brief, the tool shows suggested files and why they were selected. Press Enter to keep the checked files, type file numbers to toggle selections, or use `add path/to/file.py` to include another safe text file from the repository. Type `none` for an overview without source excerpts. After the brief is shown, saved, or copied, Codebase Brief prints a copyable summary of files kept, removed, added from suggestions, and manually added. To help improve file selection, paste that summary into the [tester feedback form](https://github.com/mohamed1111111m/codebase-brief/issues/new?template=tester-feedback.yml) along with your task and whether the brief helped. Do not include private source code or secrets. The menu's save-here choice writes `context.md` in the folder where you launched the menu; if that is the target repository, the file will be created there. Choose the show or copy option to avoid writing a file into that folder.
 
