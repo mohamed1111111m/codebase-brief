@@ -25,6 +25,7 @@ Facts you can use when writing in your own words:
 - **What it is:** a Python CLI that turns a local repository and a task into a compact Markdown brief.
 - **How it works:** it suggests files with reasons, lets the user review the selection, and includes excerpts and source paths. Git history and an optional base ref can help prioritize files.
 - **Who it may help:** someone using a browser-based coding chat that cannot inspect their local working tree, or someone who wants to choose exactly what context to share.
+- **Who may not need it:** someone whose assistant already has suitable access to the current working tree or repository. ChatGPT Work and Codex, Claude's local/GitHub connections, and Gemini's GitHub import are examples of native access that may be simpler; availability depends on the product and account.
 - **What it does not do:** it does not edit code, call an AI service, upload repository content, or guarantee that its heuristic file selection is complete.
 - **How to try it:** the README has installation steps, commands, and screenshots: https://github.com/mohamed1111111m/codebase-brief
 - **What to ask yourself before posting:** What real problem led you to build it? What did you learn from trying it on actual repositories? Can someone run the current PyPI release without signing up?

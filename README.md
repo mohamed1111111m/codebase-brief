@@ -8,11 +8,13 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![MIT License](https://img.shields.io/badge/license-MIT-8A63D2.svg)](LICENSE)
 
-**Browser-based coding chats cannot see your local repo.** Codebase Brief turns one coding task into a short, reviewable file shortlist—with excerpts, reasons, and source paths—so you can give ChatGPT, Claude, or another chat the project context it cannot inspect itself.
+**Need a reviewed, task-specific handoff for a coding chat?** Codebase Brief turns one coding task into a short file shortlist—with excerpts, reasons, and source paths—when your assistant cannot access the project directly or you want to choose exactly what context to share.
 
-It works locally, without an AI service or account. Review the brief, save it, or paste it into ChatGPT, Claude, or another assistant that cannot inspect your local working tree.
+It works locally, without an AI service or account. Review the brief, save it, or paste it into the assistant you want to use.
 
-**Best fit:** a browser chat that cannot inspect your local files, or a task where you want to choose exactly what context to share. If your coding agent already reads and indexes the working tree, its built-in repo tools may be enough.
+## When Codebase Brief fits
+
+It is most useful when your chat cannot access the current local project, or when you want a small, reviewable handoff instead of giving an assistant broad repo access. Some tools now offer local-folder or GitHub-repository access—for example, [ChatGPT Work and Codex](https://help.openai.com/en/articles/20001275), [Claude's local and GitHub connections](https://support.anthropic.com/en/articles/11725091-when-to-use-desktop-and-web-connectors), and [Gemini's GitHub import](https://support.google.com/gemini/answer/16176929). Availability depends on the tool, plan, and setup. If your assistant can already read the current working tree and do the task safely, its built-in repo access may be simpler; you may not need Codebase Brief.
 
 ## See it in action
 
