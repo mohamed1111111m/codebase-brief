@@ -26,5 +26,23 @@ jobs:
           python -m pip install --upgrade build twine
           python -m build
           python -m twine check dist/*
+      - name: Smoke-test the built wheel in a clean environment
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          python -m venv .release-venv
+          .release-venv/bin/python -m pip install --no-deps dist/*.whl
+          .release-venv/bin/python - <<'PY'
+          import importlib.metadata
+          import os
+          import subprocess
+
+          expected = os.environ["RELEASE_TAG"].removeprefix("v")
+          actual = importlib.metadata.version("codebase-brief")
+          if actual != expected:
+              raise SystemExit(f"Release tag says {expected}, but wheel is {actual}")
+          subprocess.run([".release-venv/bin/codebase-brief", "--help"], check=True, stdout=subprocess.DEVNULL)
+          subprocess.run([".release-venv/bin/brief", "--version"], check=True)
+          PY
       - name: Publish package
         uses: pypa/gh-action-pypi-publish@release/v1

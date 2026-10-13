@@ -1,24 +1,24 @@
 # Publishing Codebase Brief to PyPI
 
-The package is configured as `codebase-brief` version `0.1.0`. Publishing is automated through GitHub Actions Trusted Publishing; no PyPI API token is stored in this repository.
+The package is configured as `codebase-brief`. Publishing is automated through GitHub Actions Trusted Publishing; no PyPI API token is stored in this repository. PyPI releases are immutable, so every release needs a new version in `pyproject.toml` and the app's `VERSION` constant.
 
-## One-time account setup
+## Current publisher setup
 
-1. Create or sign in to your personal account at [PyPI](https://pypi.org/account/register/).
-2. On PyPI, add a pending Trusted Publisher for the first upload:
-   - Owner: `mohamed1111111m`
-   - Repository: `codebase-brief`
-   - Workflow: `publish.yml`
-   - Environment: `pypi`
-3. In GitHub, open **Settings → Environments** and create an environment named `pypi`. Consider requiring approval before a release workflow publishes.
-4. Confirm the project version and release notes in `pyproject.toml` and `CHANGELOG.md`.
-5. Create a GitHub Release with tag `v0.1.0`. Publishing the release triggers `.github/workflows/publish.yml` to build, validate, and upload the package.
+The package already exists on PyPI. Its GitHub Trusted Publisher is configured for owner `mohamed1111111m`, repository `codebase-brief`, workflow `publish.yml`, and GitHub environment `pypi`. Do not create a second publisher for routine releases.
 
-The first successful upload claims the `codebase-brief` name on PyPI. Check the PyPI project page first to ensure another publisher has not claimed it since the last availability check. PyPI releases are immutable; use a new version number for corrections.
+For each release:
+
+1. Update the version in `pyproject.toml` and `context_inject/cli.py`.
+2. Move completed changes into a versioned section in `CHANGELOG.md` and check the README install instructions.
+3. Run the local release checks below.
+4. Push the release commit to `main`, then create a GitHub Release with a matching tag such as `v0.1.1`. Publishing the GitHub Release triggers `.github/workflows/publish.yml` to build, validate, and upload the package.
+5. Check the Actions run and the [PyPI project page](https://pypi.org/project/codebase-brief/) to confirm the upload.
+
+PyPI releases are immutable; use a new version number for corrections.
 
 ## Verify after publication
 
-Wait for the [PyPI project page](https://pypi.org/project/codebase-brief/) to appear, then use a clean virtual environment:
+After the new version appears on the [PyPI project page](https://pypi.org/project/codebase-brief/), verify it in a clean virtual environment:
 
 ```powershell
 python -m venv .venv

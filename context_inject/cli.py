@@ -23,7 +23,7 @@ MAX_KEY_FILES = 12
 MAX_SELECTION_CHOICES = 30
 MAX_DISCOVERED_FILES = 20_000
 IMPORT_SUFFIXES = {".py", ".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs", ".mts", ".cts"}
-VERSION = "0.1.0"
+VERSION = "0.1.1"
 MANIFESTS = (
     "package.json", "pyproject.toml", "requirements.txt", "Cargo.toml",
     "go.mod", "Gemfile", "composer.json", "pom.xml",

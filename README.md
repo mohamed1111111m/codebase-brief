@@ -26,25 +26,18 @@ The first image is a terminal-style rendering of the app's actual numbered menu.
 
 ## Install the latest build
 
-You need Python 3.10 or newer. Git is optional when running the app, but required to install the latest build from GitHub and to use recent-history or base-diff details.
+You need Python 3.10 or newer. Git is optional, but required for recent-history and base-diff details.
 
-The current PyPI release is `0.1.0`. The latest GitHub build also includes the reviewed-file feedback summary and importer-aware `--base` selection. To try those changes, install the latest build with `pipx`:
+The current PyPI release is `0.1.1` and includes the reviewed-file feedback summary and importer-aware `--base` selection. Install it with `pipx`:
 
 ```powershell
-pipx install --force git+https://github.com/mohamed1111111m/codebase-brief.git
+pipx install codebase-brief
 brief "C:\work\my-app" --task "Trace the login flow" --copy
 ```
 
 The brief is copied to your clipboard for pasting into your assistant. Replace the example path and task with yours. To use the numbered menu, run `brief` with no arguments.
 
-If you prefer the published PyPI release, install it instead:
-
-```powershell
-pipx install codebase-brief
-brief
-```
-
-Or use a virtual environment for the published release:
+Or use a virtual environment:
 
 ```powershell
 python -m venv .venv

@@ -45,7 +45,7 @@ Use docs/images/product-hunt-demo.mp4 as a short, silent walkthrough assembled f
 
 ## Preflight checklist
 
-- [ ] `codebase-brief` package appears on PyPI and installs from a clean environment.
+- [ ] The latest `codebase-brief` release is on PyPI and installs from a clean environment.
 - [ ] Demo video and all screenshots are readable at Product Hunt display size; replace the screenshot walkthrough with a live screen recording if one is available.
 - [ ] Product Hunt account onboarding is complete and the maker profile is filled in.
 - [ ] All links work; GitHub Actions and the local test suite are green.

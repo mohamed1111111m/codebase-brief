@@ -466,7 +466,7 @@ class ContextInjectTests(unittest.TestCase):
         plain = __import__("re").sub(r"\x1b\[[0-9;]*m", "", output.getvalue())
         self.assertIn("CODEBASE", plain)
         self.assertIn("BRIEF", plain)
-        self.assertIn("v0.1.0", plain)
+        self.assertIn("v0.1.1", plain)
         self.assertIn("Meet Briefy - your repo guide", plain)
         self.assertIn("WHAT THIS DOES", plain)
         self.assertIn("Makes a short guide to your project for an AI coding assistant", plain)
