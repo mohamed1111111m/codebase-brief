@@ -45,6 +45,7 @@
     .light { width:9px; height:9px; border-radius:50%; background:#ff766e; }.light:nth-child(2){background:#f6c76a}.light:nth-child(3){background:#66d8aa}
     .termbar span:last-child { margin-left:6px; }
     pre { overflow:auto; margin:0; padding:23px; color:#d8dce6; font:13px/1.85 ui-monospace,SFMono-Regular,Consolas,monospace; }
+    .termnote { margin:0; padding:0 23px 18px; color:var(--muted); font-size:13px; }
     .prompt { color:var(--cyan); }.flag { color:var(--violet); }.comment { color:#8791a3; }.result { color:var(--gold); }
     .section { padding:65px 0; border-top:1px solid var(--line); }
     h2 { margin:0 0 10px; font-size:clamp(28px,4vw,38px); line-height:1.15; letter-spacing:-.04em; }
@@ -83,16 +84,12 @@
           <p class="note">Want to preview it first? Run <code>brief --demo</code>; it uses a temporary sample project and leaves your files alone.</p>
           <p class="note">Already using an assistant with local-folder or GitHub access? Its built-in repo tools may be simpler; <a href="https://github.com/mohamed1111111m/codebase-brief#when-codebase-brief-fits">see when Codebase Brief fits.</a></p>
         </div>
-        <div class="terminal" aria-label="Example terminal command">
-          <div class="termbar"><i class="light"></i><i class="light"></i><i class="light"></i><span>Terminal · your project folder</span></div>
-          <pre><span class="comment"># Install once</span>
-<span class="prompt">$</span> pipx install codebase-brief
+        <div class="terminal" aria-label="First run from your project folder">
+          <div class="termbar"><i class="light"></i><i class="light"></i><i class="light"></i><span>First run · inside your project folder</span></div>
+<pre><span class="prompt">$</span> pipx install codebase-brief
 
-<span class="comment"># Make a brief for a task</span>
-<span class="prompt">$</span> brief . <span class="flag">--task</span> <span class="result">"Trace the login flow"</span>
-
-<span class="comment"># Review the suggested files, then paste</span>
-<span class="prompt">$</span> brief . <span class="flag">--task</span> <span class="result">"Trace the login flow"</span> <span class="flag">--copy</span></pre>
+<span class="prompt">$</span> brief</pre>
+          <p class="termnote">In the menu, choose 1, describe your task, review the file list, then choose 4 to copy the brief.</p>
         </div>
       </section>
 
