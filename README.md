@@ -68,7 +68,9 @@ When the menu opens, it uses the folder you launched it from as the starting pro
 3. **Help and examples** — see the workflow and an example command.
 0. **Exit** — close the menu.
 
-Before generating the brief, the tool shows suggested files and why they were selected. Press Enter to keep the checked files, type file numbers to toggle selections, or type `none` for an overview without source excerpts. Then choose whether to show the result, save it, choose another output path, or copy it to your clipboard. The menu's save-here choice writes `context.md` in the folder where you launched the menu; if that is the target repository, the file will be created there. Choose the show or copy option to avoid writing a file into that folder.
+In plain terms, Codebase Brief makes a small guide to a project so an AI coding assistant can get oriented before helping with a task. It does not write or fix code. It reads project information locally and prepares a guide for you to review and share.
+
+Before generating the brief, the tool shows suggested files and why they were selected. Press Enter to keep the checked files, type file numbers to toggle selections, or use `add path/to/file.py` to include another safe text file from the repository. Type `none` for an overview without source excerpts. After the brief is shown, saved, or copied, Codebase Brief prints a copyable summary of files kept, removed, added from suggestions, and manually added, so you can share which suggestions helped or missed the mark. The menu's save-here choice writes `context.md` in the folder where you launched the menu; if that is the target repository, the file will be created there. Choose the show or copy option to avoid writing a file into that folder.
 
 For your first try, choose a project you know and a task you understand. Check whether the suggested files are the ones you would have shown a coding assistant yourself.
 
@@ -98,7 +100,7 @@ The generated Markdown is a starting map for your assistant, not a complete copy
 - Small excerpts from selected files, within the requested size budget.
 - Source paths throughout the brief so you can open and verify the material.
 
-The file picker uses task words, recent changes, selected Git diffs, common entry points, and direct local Python or JavaScript/TypeScript imports. These are simple heuristics, not semantic code analysis. It traces at most one direct import hop for supported languages, so it can miss relevant files.
+The file picker uses task words, recent changes, selected Git diffs, common entry points, and direct local Python or JavaScript/TypeScript imports. With `--base`, it also scans supported source files for direct imports of changed files. It understands literal dynamic imports, Python `importlib` calls with literal module names, and simple `paths` aliases in `tsconfig.json` or `jsconfig.json`. This is still static analysis: imports assembled from runtime values, complex config inheritance, generated modules, and unsupported languages may be missed.
 
 ## Privacy and limitations
 

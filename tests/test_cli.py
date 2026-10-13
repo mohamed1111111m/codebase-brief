@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from context_inject.cli import DEFAULT_BUDGET_TOKENS, MAX_CHARS, MAX_FILE_BYTES, MAX_KEY_FILES, choose_files, compact, copy_to_clipboard, gather, interactive, local_imports, main, read_excerpt, redact, safe_path, suggest_file_details, suggest_files
+from context_inject.cli import DEFAULT_BUDGET_TOKENS, MAX_CHARS, MAX_FILE_BYTES, MAX_KEY_FILES, choose_files, compact, copy_to_clipboard, gather, interactive, local_imports, main, read_excerpt, redact, review_feedback, safe_path, suggest_file_details, suggest_files
 
 
 class ContextInjectTests(unittest.TestCase):
@@ -85,6 +85,27 @@ class ContextInjectTests(unittest.TestCase):
         available = {"src/main.ts", "src/api/client.ts"}
         self.assertEqual(local_imports(self.root, "src/main.ts", available), ["src/api/client.ts"])
 
+    def test_javascript_tsconfig_alias_and_literal_dynamic_imports_are_followed(self):
+        self.put("tsconfig.json", '{\n  // app aliases\n  "compilerOptions": {"baseUrl": ".", "paths": {"@/*": ["src/*"],},},\n}')
+        self.put("src/main.ts", "import { User } from '@/models/user';\nconst lazy = await import('./lazy');\n")
+        self.put("src/models/user.ts", "export class User {}\n")
+        self.put("src/lazy.ts", "export default 1;\n")
+        available = {"tsconfig.json", "src/main.ts", "src/models/user.ts", "src/lazy.ts"}
+        configs = __import__("context_inject.cli", fromlist=["_typescript_path_configs"])._typescript_path_configs(self.root, list(available))
+        self.assertEqual(local_imports(self.root, "src/main.ts", available, configs), ["src/models/user.ts", "src/lazy.ts"])
+
+    def test_python_literal_dynamic_imports_are_followed(self):
+        self.put("src/loader.py", "from importlib import import_module as load\nmodule = load('src.models')\n")
+        self.put("src/models.py", "class Model: pass\n")
+        available = {"src/loader.py", "src/models.py"}
+        self.assertEqual(local_imports(self.root, "src/loader.py", available), ["src/models.py"])
+
+    def test_python_relative_dynamic_import_uses_literal_package(self):
+        self.put("pkg/models.py", "class Model: pass\n")
+        self.put("pkg/subpkg/loader.py", "import importlib\nmodule = importlib.import_module('..models', package='pkg.subpkg')\n")
+        available = {"pkg/models.py", "pkg/subpkg/loader.py"}
+        self.assertEqual(local_imports(self.root, "pkg/subpkg/loader.py", available), ["pkg/models.py"])
+
     def test_absolute_python_import_in_src_layout_is_followed(self):
         self.put("app/main.py", "from app.auth import authenticate\n")
         self.put("src/app/auth.py", "def authenticate(): pass\n")
@@ -123,6 +144,33 @@ class ContextInjectTests(unittest.TestCase):
         self.assertIn("src/auth.py", output)
         self.assertIn("Service handles user auth", output)
         self.assertIn("tighten auth", output)
+
+    def test_base_ref_prioritizes_direct_importers_of_changed_files(self):
+        self.put("src/models.py", "class User: pass\n")
+        self.put("src/auth.py", "from src.models import User\ndef authenticate(): return User()\n")
+        self.put("src/unrelated.py", "def unrelated(): pass\n")
+        self.init_git()
+        self.commit("initial")
+        base = self.git("rev-parse", "HEAD")
+        self.put("src/models.py", "class User: pass\nclass Team: pass\n")
+        self.commit("extend models")
+        details = suggest_file_details(self.root, "update models", base)
+        reasons = dict(details)
+        self.assertEqual(reasons["src/models.py"], "selected from base diff")
+        self.assertEqual(reasons["src/auth.py"], "imports changed file src/models.py")
+        self.assertNotIn("src/unrelated.py", [path for path, reason in details if reason == "imports changed file src/models.py"])
+
+    def test_base_ref_finds_importers_through_tsconfig_aliases(self):
+        self.put("tsconfig.json", '{"compilerOptions":{"baseUrl":".","paths":{"@/*":["src/*"]}}}')
+        self.put("src/models/user.ts", "export class User {}\n")
+        self.put("src/auth.ts", "import { User } from '@/models/user';\n")
+        self.init_git()
+        self.commit("initial")
+        base = self.git("rev-parse", "HEAD")
+        self.put("src/models/user.ts", "export class User { active = true }\n")
+        self.commit("extend User")
+        reasons = dict(suggest_file_details(self.root, "update model", base))
+        self.assertEqual(reasons["src/auth.ts"], "imports changed file src/models/user.ts")
 
     def test_base_diff_can_include_safe_files_outside_source_discovery(self):
         self.init_git()
@@ -326,6 +374,52 @@ class ContextInjectTests(unittest.TestCase):
         self.assertEqual(selected, ["src/a.py", "src/b.py"])
         self.assertTrue(any("Choose unique numbers" in message for message in messages))
 
+    def test_picker_reports_removed_and_added_files_for_feedback(self):
+        candidates = [f"src/file_{index}.py" for index in range(MAX_KEY_FILES + 1)]
+        messages = []
+        selected = choose_files(candidates, input_fn=lambda _: "1,13", print_fn=messages.append)
+        self.assertNotIn(candidates[0], selected)
+        self.assertIn(candidates[12], selected)
+        report = review_feedback(candidates, candidates[:MAX_KEY_FILES], selected)
+        self.assertIn("Review feedback (copy/paste)", report)
+        self.assertIn("removed: src/file_0.py", report)
+        self.assertIn("Added from suggestions (1)", report)
+        self.assertIn("added: src/file_12.py", report)
+
+    def test_picker_adds_safe_repo_file_and_reports_it(self):
+        self.put("src/suggested.py", "def suggested(): pass\n")
+        self.put("tests/test_missed.py", "def test_missed_file(): pass\n")
+        candidates = ["src/suggested.py"]
+        reasons = {"src/suggested.py": "matches task words"}
+        messages = []
+        answers = iter(["add tests/test_missed.py", ""])
+        selected = choose_files(candidates, reasons, input_fn=lambda _: next(answers), print_fn=messages.append, repo_root=self.root)
+        self.assertEqual(selected, ["src/suggested.py", "tests/test_missed.py"])
+        self.assertEqual(reasons["tests/test_missed.py"], "manually added by you")
+        feedback = review_feedback(["src/suggested.py"], ["src/suggested.py"], selected)
+        self.assertIn("Manually added, not suggested (1)", feedback)
+        self.assertIn("manually added: tests/test_missed.py", feedback)
+        output = gather(self.root, "inspect", selected_files=selected, manually_added_files=["tests/test_missed.py"])
+        self.assertIn("tests/test_missed.py — manually added by you", output)
+
+    def test_picker_rejects_unsafe_manual_file_paths(self):
+        self.put(".env", "API_KEY=do-not-read\n")
+        self.put("src/ok.py", "print('ok')\n")
+        messages = []
+        answers = iter(["add ../outside.py", "add .env", ""])
+        selected = choose_files(["src/ok.py"], input_fn=lambda _: next(answers), print_fn=messages.append, repo_root=self.root)
+        self.assertEqual(selected, ["src/ok.py"])
+        self.assertEqual(sum("missing, unsafe" in message for message in messages), 2)
+
+    def test_picker_allows_manual_add_when_there_are_no_suggestions(self):
+        self.put("src/needed.py", "def needed(): pass\n")
+        messages = []
+        answers = iter(["add src/needed.py", ""])
+        selected = choose_files([], input_fn=lambda _: next(answers), print_fn=messages.append, repo_root=self.root)
+        self.assertEqual(selected, ["src/needed.py"])
+        self.assertTrue(any("No safe, readable source files were suggested" in message for message in messages))
+        self.assertIn("manually added: src/needed.py", review_feedback([], [], selected))
+
     def test_gather_respects_explicit_file_selection_and_revalidates_paths(self):
         self.put("README.md", "# Demo")
         self.put("src/a.py", "def alpha(): return 1\n")
@@ -355,6 +449,8 @@ class ContextInjectTests(unittest.TestCase):
         self.assertIn("v0.1.0", plain)
         self.assertIn("Meet Briefy - your repo guide", plain)
         self.assertIn("WHAT THIS DOES", plain)
+        self.assertIn("Makes a short guide to your project for an AI coding assistant", plain)
+        self.assertIn("does not write code or fix bugs", plain)
         self.assertIn("copy or save the brief to share", plain)
         self.assertIn("1  Build a context brief", plain)
         self.assertIn("2  Choose a different project", plain)
@@ -366,11 +462,21 @@ class ContextInjectTests(unittest.TestCase):
         self.put("README.md", "# Interactive fixture\n")
         answers = ["1", "Explain this fixture", "", "", "", "2", "", "0"]
         output = io.StringIO()
-        with patch("builtins.input", side_effect=answers), patch("pathlib.Path.cwd", return_value=self.root), contextlib.redirect_stdout(output):
+        answer_iter = iter(answers)
+
+        def prompt_input(prompt=""):
+            output.write(prompt + "\n")
+            return next(answer_iter)
+
+        with patch("builtins.input", side_effect=prompt_input), patch("pathlib.Path.cwd", return_value=self.root), contextlib.redirect_stdout(output):
             self.assertEqual(interactive(), 0)
         pack = (self.root / "context.md").read_text(encoding="utf-8")
         self.assertIn("Explain this fixture", pack)
         self.assertIn("Context pack saved to", output.getvalue())
+        self.assertLess(output.getvalue().index("Context pack saved to"), output.getvalue().index("Review feedback (copy/paste)"))
+        self.assertIn("What do you want your AI coding assistant to help with?", output.getvalue())
+        self.assertIn("Optional Git base branch/commit", output.getvalue())
+        self.assertIn("How do you want to use your project guide?", output.getvalue())
 
     def test_interactive_clipboard_choice_copies_generated_brief(self):
         self.put("README.md", "# Clipboard interactive fixture\n")

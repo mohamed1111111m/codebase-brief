@@ -22,6 +22,7 @@ MAX_FILE_BYTES = 12_000
 MAX_KEY_FILES = 12
 MAX_SELECTION_CHOICES = 30
 MAX_DISCOVERED_FILES = 20_000
+IMPORT_SUFFIXES = {".py", ".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs", ".mts", ".cts"}
 VERSION = "0.1.0"
 MANIFESTS = (
     "package.json", "pyproject.toml", "requirements.txt", "Cargo.toml",
@@ -320,7 +321,138 @@ def _resolve_import_path(base: str, available: set[str]) -> str | None:
     return None
 
 
-def local_imports(root: Path, relative: str, available: set[str]) -> list[str]:
+def _strip_jsonc_comments(source: str) -> str:
+    """Remove JSONC comments without changing comment-like text in strings."""
+    output: list[str] = []
+    index = 0
+    in_string = False
+    escaped = False
+    while index < len(source):
+        char = source[index]
+        next_char = source[index + 1] if index + 1 < len(source) else ""
+        if in_string:
+            output.append(char)
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == '"':
+                in_string = False
+            index += 1
+        elif char == '"':
+            in_string = True
+            output.append(char)
+            index += 1
+        elif char == "/" and next_char == "/":
+            while index < len(source) and source[index] not in "\r\n":
+                output.append(" ")
+                index += 1
+        elif char == "/" and next_char == "*":
+            output.extend("  ")
+            index += 2
+            while index < len(source) and source[index:index + 2] != "*/":
+                output.append("\n" if source[index] == "\n" else " ")
+                index += 1
+            if index < len(source):
+                output.extend("  ")
+                index += 2
+        else:
+            output.append(char)
+            index += 1
+    return re.sub(r",(?=\s*[}\]])", "", "".join(output))
+
+
+def _typescript_path_configs(root: Path, files: list[str]) -> list[dict]:
+    """Read simple tsconfig/jsconfig path maps, including ordinary JSONC files."""
+    configs: list[dict] = []
+    for relative in files:
+        if Path(relative).name.lower() not in {"tsconfig.json", "jsconfig.json"}:
+            continue
+        excerpt = read_excerpt(root, relative)
+        if not excerpt:
+            continue
+        try:
+            data = json.loads(_strip_jsonc_comments(excerpt[0]))
+        except (json.JSONDecodeError, TypeError):
+            continue
+        options = data.get("compilerOptions", {}) if isinstance(data, dict) else {}
+        if not isinstance(options, dict):
+            continue
+        config_dir = root / Path(relative).parent
+        has_base_url = isinstance(options.get("baseUrl"), str)
+        base_url = config_dir / (str(options["baseUrl"]) if has_base_url else ".")
+        mappings = options.get("paths", {})
+        normalized: list[tuple[str, list[str]]] = []
+        if isinstance(mappings, dict):
+            for pattern, targets in mappings.items():
+                if isinstance(pattern, str) and isinstance(targets, list):
+                    normalized.append((pattern, [target for target in targets if isinstance(target, str)]))
+        configs.append({
+            "directory": Path(relative).parent.as_posix(),
+            "base_url": base_url,
+            "has_base_url": has_base_url,
+            "mappings": sorted(normalized, key=lambda item: (-len(item[0]), item[0])),
+        })
+    return sorted(configs, key=lambda config: len(Path(config["directory"]).parts), reverse=True)
+
+
+def _resolve_js_import(
+    root: Path, importer: str, specifier: str, available: set[str], path_configs: list[dict],
+) -> str | None:
+    """Resolve relative modules plus literal tsconfig/jsconfig aliases."""
+    if specifier.startswith(("./", "../")):
+        base = Path(os.path.normpath(str(Path(importer).parent / specifier))).as_posix()
+        return _resolve_import_path(base, available)
+
+    importer_parent = Path(importer).parent.as_posix()
+    config = next(
+        (item for item in path_configs
+         if item["directory"] == "."
+         or importer_parent == item["directory"]
+         or importer_parent.startswith(item["directory"].rstrip(".") + "/")),
+        None,
+    )
+    if config is None:
+        return None
+
+    candidates: list[str] = []
+    for pattern, targets in config["mappings"]:
+        if "*" in pattern:
+            prefix, suffix = pattern.split("*", 1)
+            if not specifier.startswith(prefix) or not specifier.endswith(suffix):
+                continue
+            end = len(specifier) - len(suffix) if suffix else len(specifier)
+            capture = specifier[len(prefix):end]
+        elif pattern == specifier:
+            capture = None
+        else:
+            continue
+        for target in targets:
+            mapped = target.replace("*", capture or "")
+            absolute = Path(os.path.normpath(str(config["base_url"] / mapped))).resolve()
+            try:
+                candidates.append(absolute.relative_to(root.resolve()).as_posix())
+            except ValueError:
+                continue
+
+    # With baseUrl but no matching paths entry, TypeScript also resolves bare
+    # module-like specifiers against that directory.
+    if not candidates and config["has_base_url"]:
+        absolute = Path(os.path.normpath(str(config["base_url"] / specifier))).resolve()
+        try:
+            candidates.append(absolute.relative_to(root.resolve()).as_posix())
+        except ValueError:
+            pass
+    for candidate in candidates:
+        resolved = _resolve_import_path(candidate, available)
+        if resolved:
+            return resolved
+    return None
+
+
+def local_imports(
+    root: Path, relative: str, available: set[str], path_configs: list[dict] | None = None,
+) -> list[str]:
     """Return direct, statically discoverable local Python or JS/TS imports."""
     excerpt = read_excerpt(root, relative)
     if not excerpt:
@@ -335,16 +467,31 @@ def local_imports(root: Path, relative: str, available: set[str]) -> list[str]:
         if resolved and resolved != relative and resolved not in found:
             found.append(resolved)
 
+    def add_python_dynamic_module(module: str, package: str | None = None) -> None:
+        if module.startswith(".") and package:
+            level = len(module) - len(module.lstrip("."))
+            package_parts = package.split(".")
+            keep = max(0, len(package_parts) - level + 1)
+            remainder = module.lstrip(".")
+            module = ".".join(package_parts[:keep] + (remainder.split(".") if remainder else []))
+        add_module(module)
+
     if path.suffix.lower() == ".py":
         try:
             tree = ast.parse(source)
         except (SyntaxError, ValueError, RecursionError):
             return []
+        importlib_names = {"importlib"}
+        import_module_names = {"import_module"}
         for node in ast.walk(tree):
             if isinstance(node, ast.Import):
                 for alias in node.names:
                     add_module(alias.name)
+                    if alias.name.split(".")[0] == "importlib":
+                        importlib_names.add(alias.asname or "importlib")
             elif isinstance(node, ast.ImportFrom):
+                if node.module == "importlib":
+                    import_module_names.update(alias.asname or alias.name for alias in node.names if alias.name == "import_module")
                 if node.level:
                     parts = list(path.with_suffix("").parts)
                     if parts and parts[-1] == "__init__":
@@ -366,14 +513,32 @@ def local_imports(root: Path, relative: str, available: set[str]) -> list[str]:
                     for alias in node.names:
                         if alias.name != "*":
                             add_module(node.module + "." + alias.name)
-    elif path.suffix.lower() in {".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs", ".mts", ".cts"}:
+            elif isinstance(node, ast.Call):
+                function = node.func
+                is_dynamic = (
+                    isinstance(function, ast.Name)
+                    and (function.id == "__import__" or function.id in import_module_names)
+                ) or (
+                    isinstance(function, ast.Attribute)
+                    and function.attr == "import_module"
+                    and isinstance(function.value, ast.Name)
+                    and function.value.id in importlib_names
+                )
+                if is_dynamic and node.args and isinstance(node.args[0], ast.Constant) and isinstance(node.args[0].value, str):
+                    module = node.args[0].value
+                    package = next((keyword.value.value for keyword in node.keywords
+                                    if keyword.arg == "package" and isinstance(keyword.value, ast.Constant)
+                                    and isinstance(keyword.value.value, str)), None)
+                    if package is None and len(node.args) > 1 and isinstance(node.args[1], ast.Constant) and isinstance(node.args[1].value, str):
+                        package = node.args[1].value
+                    add_python_dynamic_module(module, package)
+    elif path.suffix.lower() in IMPORT_SUFFIXES - {".py"}:
         pattern = re.compile(
-            r"(?:\bfrom\s*|\bimport\s*|\brequire\s*\(|\bimport\s*\()\s*['\"](\.{1,2}/[^'\"]+)['\"]"
+            r"(?:\bfrom\s*|\bimport\s*|\brequire\s*\(|\bimport\s*\()\s*['\"]([^'\"]+)['\"]"
         )
-        parent = path.parent
+        configs = path_configs if path_configs is not None else _typescript_path_configs(root, discover_files(root))
         for match in pattern.finditer(source):
-            target = Path(os.path.normpath(str(parent / match.group(1)))).as_posix()
-            resolved = _resolve_import_path(target, available)
+            resolved = _resolve_js_import(root, relative, match.group(1), available, configs)
             if resolved and resolved != relative and resolved not in found:
                 found.append(resolved)
     return found
@@ -384,6 +549,7 @@ def _rank_file_details(
 ) -> list[tuple[str, str]]:
     all_files = discover_files(root)
     available = set(all_files)
+    path_configs = _typescript_path_configs(root, all_files)
     words = task_words(task)
     search_words = set(words)
     search_words.update(word[:4] for word in words if len(word) >= 6)
@@ -400,6 +566,19 @@ def _rank_file_details(
                 reasons[normalized] = reason
 
     add(diff_paths, "selected from base diff")
+
+    # Prioritize direct dependents of changed files before the broader recent
+    # history list so their specific relationship remains visible to the user.
+    changed_files = {Path(path).as_posix() for path in diff_paths}
+    if changed_files:
+        for importer in all_files:
+            if Path(importer).suffix.lower() not in IMPORT_SUFFIXES:
+                continue
+            for imported in local_imports(root, importer, available, path_configs):
+                if imported in changed_files:
+                    add([importer], f"imports changed file {imported}")
+                    break
+
     add(recent_paths[:30], "touched by recent commits")
     task_matches = [f for f in all_files if search_words and any(w in f.lower() for w in search_words)]
     task_matches.sort(key=lambda f: (-sum(w in f.lower() for w in search_words), len(f), f))
@@ -410,7 +589,7 @@ def _rank_file_details(
     # transparent static hint, not a full dependency graph or semantic parser.
     seeds = list(reasons)
     for source_file in seeds[:20]:
-        for dependency in local_imports(root, source_file, available):
+        for dependency in local_imports(root, source_file, available, path_configs):
             if dependency not in reasons:
                 reasons[dependency] = f"imported by {source_file}"
 
@@ -446,42 +625,99 @@ def suggest_file_details(
     return _rank_file_details(root, task, diff_paths, recent_paths)[:MAX_SELECTION_CHOICES]
 
 
-def choose_files(candidates: list[str], reasons: dict[str, str] | None = None, input_fn=None, print_fn=None) -> list[str]:
+def review_feedback(
+    original_suggestions: list[str], initial_selection: list[str], final_selection: list[str],
+) -> str:
+    """Build a compact, pasteable summary of what changed during file review."""
+    initial = set(initial_selection)
+    final = set(final_selection)
+    kept = [path for path in original_suggestions if path in initial and path in final]
+    removed = [path for path in original_suggestions if path in initial and path not in final]
+    added_from_suggestions = [path for path in original_suggestions if path in final and path not in initial]
+    manually_added = [path for path in final_selection if path not in original_suggestions]
+    lines = [
+        "Review feedback (copy/paste):",
+        f"Kept from initial selection ({len(kept)}):",
+        *(f"  kept: {clean_display(path)}" for path in kept),
+        f"Removed from initial selection ({len(removed)}):",
+        *(f"  removed: {clean_display(path)}" for path in removed),
+        f"Added from suggestions ({len(added_from_suggestions)}):",
+        *(f"  added: {clean_display(path)}" for path in added_from_suggestions),
+        f"Manually added, not suggested ({len(manually_added)}):",
+        *(f"  manually added: {clean_display(path)}" for path in manually_added),
+    ]
+    if not added_from_suggestions and not manually_added and not removed:
+        lines.append("  No changes from the initial selection.")
+    return "\n".join(lines)
+
+
+def choose_files(
+    candidates: list[str], reasons: dict[str, str] | None = None,
+    input_fn=None, print_fn=None, repo_root: Path | None = None,
+) -> list[str]:
     """Let the user toggle which of the ranked files are included in the brief."""
     input_fn = input if input_fn is None else input_fn
     print_fn = print if print_fn is None else print_fn
-    if not candidates:
-        print_fn("No safe, readable source files were found for this task.")
-        return []
-
     selected = set(candidates[:MAX_KEY_FILES])
-    print_fn("\nSuggested source files (checked files are included; maximum 12):")
+    if candidates:
+        print_fn("\nSuggested source files (checked files are included; maximum 12):")
+    else:
+        print_fn("No safe, readable source files were suggested. You can still add one by path.")
     for number, path in enumerate(candidates, 1):
         shown = clean_display(path)
         reason = clean_display((reasons or {}).get(path, ""))
         label = f"{shown}  ({reason})" if reason else shown
         label = label if len(label) <= 98 else "..." + label[-95:]
         print_fn(f"  {number:2}) [{'x' if path in selected else ' '}] {label}")
-    print_fn("These are guesses based on task words, Git changes, and direct imports. Review or change them.")
-    print_fn("Enter numbers to toggle; 'all' selects the top 12, 'none' selects no files, Enter keeps the suggestions.")
+    print_fn("Checked files will be included in the guide. Suggestions are guesses; you choose what goes in.")
+    print_fn("Type numbers (like 2, 4) to switch files on or off. Press Enter to keep the checked files.")
+    print_fn("Type 'add path/to/file.py' to include another safe text file, 'none' for no code, or 'all' for the top 12.")
+
+    def finish() -> list[str]:
+        return [path for path in candidates if path in selected]
 
     while True:
         try:
-            answer = input_fn("Files: ").strip().lower()
+            answer = input_fn("Files: ").strip()
         except (EOFError, KeyboardInterrupt):
             print_fn("Keeping the suggested file selection.")
-            return [path for path in candidates if path in selected]
+            return finish()
         if not answer:
-            return [path for path in candidates if path in selected]
-        if answer in {"all", "a"}:
-            return candidates[:MAX_KEY_FILES]
-        if answer in {"none", "n"}:
-            return []
+            return finish()
+        command = answer.casefold()
+        if command in {"all", "a"}:
+            selected = set(candidates[:MAX_KEY_FILES])
+            return finish()
+        if command in {"none", "n"}:
+            selected.clear()
+            return finish()
+        if command.startswith("add "):
+            raw_path = answer[4:].strip()
+            normalized = Path(raw_path).as_posix()
+            if repo_root is None:
+                print_fn("Adding a file requires a repository folder; use a numbered suggestion instead.")
+                continue
+            if safe_path(repo_root, normalized) is None or read_excerpt(repo_root, normalized) is None:
+                print_fn("That path is missing, unsafe, or not a readable text file inside the repository.")
+                continue
+            if normalized in selected:
+                print_fn("That file is already selected.")
+                continue
+            if len(selected) >= MAX_KEY_FILES:
+                print_fn(f"You can include up to {MAX_KEY_FILES} files. Deselect one first.")
+                continue
+            if normalized not in candidates:
+                candidates.append(normalized)
+            if reasons is not None:
+                reasons[normalized] = "manually added by you"
+            selected.add(normalized)
+            print_fn(f"Added as option {len(candidates)}: {clean_display(normalized)}. Continue reviewing or press Enter when finished.")
+            continue
         tokens = re.split(r"[,\s]+", answer)
         try:
             indexes = [int(token) for token in tokens if token]
         except ValueError:
-            print_fn("Enter valid file numbers separated by commas, 'all', 'none', or press Enter.")
+            print_fn("Enter file numbers, 'add path/to/file', 'all', 'none', or press Enter.")
             continue
         if not indexes or len(indexes) != len(set(indexes)) or any(i < 1 or i > len(candidates) for i in indexes):
             print_fn(f"Choose unique numbers from 1 to {len(candidates)}.")
@@ -498,7 +734,7 @@ def choose_files(candidates: list[str], reasons: dict[str, str] | None = None, i
                 break
         else:
             selected = updated
-            return [path for path in candidates if path in selected]
+            return finish()
 
 
 def gather(
@@ -507,6 +743,7 @@ def gather(
     base_ref: str | None = None,
     selected_files: list[str] | None = None,
     budget_tokens: int = DEFAULT_BUDGET_TOKENS,
+    manually_added_files: list[str] | None = None,
 ) -> str:
     if not MIN_BUDGET_TOKENS <= budget_tokens <= MAX_BUDGET_TOKENS:
         raise ValueError(f"budget must be between {MIN_BUDGET_TOKENS} and {MAX_BUDGET_TOKENS} estimated tokens")
@@ -521,14 +758,20 @@ def gather(
     ranked_details = _rank_file_details(root, task, diff_paths, recent_paths)
     priority = [path for path, _reason in ranked_details]
     reasons = dict(ranked_details)
+    for relative in manually_added_files or []:
+        normalized = Path(relative).as_posix()
+        if safe_path(root, normalized):
+            reasons[normalized] = "manually added by you"
     if selected_files is None:
         key_files = priority[:MAX_KEY_FILES]
     else:
         key_files = []
         for relative in selected_files:
             normalized = Path(relative).as_posix()
-            if normalized in priority and normalized not in key_files and safe_path(root, normalized):
+            if normalized not in key_files and safe_path(root, normalized):
                 key_files.append(normalized)
+                if normalized not in reasons:
+                    reasons[normalized] = "manually added by you"
         key_files = key_files[:MAX_KEY_FILES]
 
     sections: list[tuple[str, list[str]]] = []
@@ -727,9 +970,11 @@ def interactive() -> int:
         print("\n  " + paint("WORKSPACE", "1;94"))
         print("  " + paint(clean_display(str(repo)), "92"))
         print("\n  " + paint("WHAT THIS DOES", "1;94"))
-        print("  Builds a small, task-focused repo brief for your coding assistant.")
-        print("  Review suggested files, then copy or save the brief to share.")
-        print("  Local only: it never sends your code to an AI service.")
+        print("  Makes a short guide to your project for an AI coding assistant.")
+        print("  It gathers project notes and code excerpts you choose.")
+        print("  It does not write code or fix bugs.")
+        print("  Review it, then copy or save the brief to share with your assistant.")
+        print("  Your files stay on this computer; Codebase Brief makes no AI calls.")
         print("\n  " + paint("GET STARTED", "1;97"))
         print("  " + paint("-" * 30, "34"))
         print("\n  " + paint("1", "1;96") + paint("  Build a context brief", "97"))
@@ -759,12 +1004,19 @@ def interactive() -> int:
                 print("That folder does not exist. The current project folder is unchanged.")
             continue
         if choice == "3":
-            print("\nCodebase Brief makes a compact Markdown brief you can paste into Claude Code, Cursor, OpenCode, Codex, or another coding assistant.")
-            print("1. Choose your repository folder.  2. Describe the coding task.  3. Review and toggle suggested files.")
-            print("4. Copy the finished brief to your clipboard or save it as a file.")
-            print("File suggestions use task words, Git history/diffs, and direct Python or JS/TS imports; they are not semantic analysis.")
-            print(f"The default budget is about {DEFAULT_BUDGET_TOKENS:,} tokens; use --budget to change it. Size uses a rough {CHARS_PER_TOKEN}-characters-per-token estimate.")
-            print("Processing stays local. Clipboard copying only happens when you choose it; secret filtering is best-effort, so review before sharing.")
+            print("\nWHAT IT DOES")
+            print("Makes a short project guide you can paste into an AI coding chat.")
+            print("It reads documentation, Git history, and code excerpts you review.")
+            print("It does not write code, fix bugs, or send your files to an AI service.")
+            print("\nHOW TO USE IT")
+            print("1. Choose a project folder (or keep the current one).")
+            print("2. Say what you want your coding assistant to help with.")
+            print("3. Optionally enter a Git base such as main to include changed files and direct importers.")
+            print("4. Keep or change the suggested files; use 'add path/to/file' for a missing file.")
+            print("5. View, save, or copy the guide. A review summary appears at the end.")
+            print("\nA base ref only helps when your current Git commit differs from that ref. Matching covers static imports, literal dynamic imports, and simple TS/JS aliases; runtime-built names may be missed.")
+            print(f"The default guide size is about {DEFAULT_BUDGET_TOKENS:,} tokens ({CHARS_PER_TOKEN} characters per token, roughly).")
+            print("Save creates a Markdown file; copy puts the guide on your clipboard only when you choose it.")
             print('\nExample: codebase-brief "C:\\work\\my-app" --task "Find login handling" --base main --budget 2400 --copy')
             input("\nPress Enter to return to the menu...")
             continue
@@ -773,12 +1025,13 @@ def interactive() -> int:
             continue
 
         try:
-            task = input("\nWhat are you working on? ").strip()
+            print("\nLet’s make a project guide for your coding task.")
+            task = input("What do you want your AI coding assistant to help with? ").strip()
             if not task:
                 print("Enter a task before generating a pack.")
                 continue
-            base_ref = input("Base Git ref (optional; press Enter to skip): ").strip() or None
-            budget_text = input(f"Approx. token budget [{DEFAULT_BUDGET_TOKENS}]: ").strip()
+            base_ref = input("Optional Git base branch/commit (for example, main; Enter to skip): ").strip() or None
+            budget_text = input(f"Approximate guide size in tokens [{DEFAULT_BUDGET_TOKENS}] (Enter keeps the default): ").strip()
             budget_tokens = DEFAULT_BUDGET_TOKENS
             if budget_text:
                 try:
@@ -791,13 +1044,16 @@ def interactive() -> int:
                     budget_tokens = DEFAULT_BUDGET_TOKENS
             details = suggest_file_details(repo, task, base_ref)
             candidates = [path for path, _reason in details]
-            selected_files = choose_files(candidates, dict(details))
-            print("\nOutput:")
-            print("  1) Show the pack in this terminal")
-            print("  2) Save as context.md in the current folder")
-            print("  3) Choose an output file")
-            print("  4) Copy it to the clipboard for your coding assistant")
-            output_choice = input("Select output [1-4, default 2]: ").strip() or "2"
+            original_suggestions = list(candidates)
+            initial_selection = candidates[:MAX_KEY_FILES]
+            selection_reasons = dict(details)
+            selected_files = choose_files(candidates, selection_reasons, repo_root=repo)
+            print("\nHow do you want to use your project guide?")
+            print("  1) Show it here")
+            print("  2) Save as context.md in the folder you opened this app from")
+            print("  3) Save to a file path you choose")
+            print("  4) Copy it so you can paste it into your AI coding chat")
+            output_choice = input("Choose 1-4 (Enter saves context.md): ").strip() or "2"
             if output_choice not in {"1", "2", "3", "4"}:
                 print("Choose 1, 2, 3, or 4. Pack not generated.")
                 continue
@@ -820,7 +1076,11 @@ def interactive() -> int:
                     print("Kept the existing file. Pack not generated.")
                     continue
 
-            pack = gather(repo, task, base_ref, selected_files=selected_files, budget_tokens=budget_tokens)
+            manually_added = [path for path, reason in selection_reasons.items() if reason == "manually added by you"]
+            pack = gather(
+                repo, task, base_ref, selected_files=selected_files,
+                budget_tokens=budget_tokens, manually_added_files=manually_added,
+            )
             if output_choice == "4":
                 copy_to_clipboard(pack)
                 print("\nBrief copied. Paste it into the coding assistant you want to use.")
@@ -830,6 +1090,7 @@ def interactive() -> int:
                 print(f"\nContext pack saved to: {clean_display(str(output_path.resolve()))}")
             else:
                 print("\n" + pack)
+            print("\n" + review_feedback(original_suggestions, initial_selection, selected_files))
             input("\nPress Enter to return to the menu...")
         except (EOFError, KeyboardInterrupt):
             print("\nReturning to the menu.")
@@ -850,7 +1111,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("repo_path", nargs="?", help="Path to a local repository or source directory")
     parser.add_argument("--version", action="version", version=f"%(prog)s {VERSION}")
     parser.add_argument("--task", help="Task the context pack should support")
-    parser.add_argument("--base", help="Optional Git base ref; changed paths are prioritized")
+    parser.add_argument("--base", help="Optional Git base ref; changed files and their direct importers are prioritized")
     parser.add_argument("--budget", type=int, default=DEFAULT_BUDGET_TOKENS, help=f"Approximate output budget in tokens ({MIN_BUDGET_TOKENS}-{MAX_BUDGET_TOKENS}; default: {DEFAULT_BUDGET_TOKENS})")
     parser.add_argument("--output", help="Write Markdown to this path (default: stdout)")
     parser.add_argument("--copy", action="store_true", help="Copy the generated Markdown to your system clipboard")

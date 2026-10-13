@@ -1,6 +1,12 @@
 # Changelog
 
-## 0.1.0 - Unreleased
+## Unreleased
+
+- Let users add a safe repository file by path and print a copyable summary of reviewed file selections.
+- Print review feedback after the generated brief, and prioritize direct local importers of files changed since `--base`.
+- Resolve literal Python dynamic imports and simple JS/TS path aliases when tracing imports.
+
+## 0.1.0
 
 - Generate bounded, local Markdown context briefs from project documentation, manifests, Git history, and selected source files.
 - Add an interactive terminal menu with ranked file selection, output choices, and overwrite confirmation.
