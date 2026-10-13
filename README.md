@@ -30,7 +30,7 @@ The first image is a terminal-style rendering of the app's actual numbered menu.
 
 You need Python 3.10 or newer. Git is optional, but required for recent-history and base-diff details.
 
-The current PyPI release is `0.1.4` and includes the review-feedback summary, importer-aware `--base` selection, and a sample demo. Install it with `pipx`:
+The current PyPI package includes the review-feedback summary, importer-aware `--base` selection, and a sample demo. Install it with `pipx`:
 
 ```powershell
 pipx install codebase-brief
