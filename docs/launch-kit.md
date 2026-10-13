@@ -16,19 +16,20 @@ Record a terminal window and show one complete path from repository to brief. Us
 
 Keep the terminal text large enough to read. Prefer a real run over a mockup. If recording a longer walkthrough, also show `brief --help` and the menu (`brief -i`).
 
-## Show HN draft
+## Show HN preparation
 
-Hacker News asks that Show HN projects be personally built, usable by visitors, and presented by someone available to discuss them. Edit this in your own voice and include what motivated you to make the tool and what you learned from testing it. Do not ask people to upvote.
+Hacker News says not to post generated text and asks people to write submissions themselves. Treat these as factual notes, not copy to paste. Only post if you can personally explain why you built the tool, demonstrate it, and answer questions. Do not ask people to upvote or comment.
 
-**Title:** `Show HN: Codebase Brief – a local repo brief for browser-based coding chats`
+Facts you can use when writing in your own words:
 
-**Draft:**
+- **What it is:** a Python CLI that turns a local repository and a task into a compact Markdown brief.
+- **How it works:** it suggests files with reasons, lets the user review the selection, and includes excerpts and source paths. Git history and an optional base ref can help prioritize files.
+- **Who it may help:** someone using a browser-based coding chat that cannot inspect their local working tree, or someone who wants to choose exactly what context to share.
+- **What it does not do:** it does not edit code, call an AI service, upload repository content, or guarantee that its heuristic file selection is complete.
+- **How to try it:** the README has installation steps, commands, and screenshots: https://github.com/mohamed1111111m/codebase-brief
+- **What to ask yourself before posting:** What real problem led you to build it? What did you learn from trying it on actual repositories? Can someone run the current PyPI release without signing up?
 
-I made Codebase Brief for browser-based coding chats that cannot inspect my local working tree. I wanted a repeatable way to give one task a small, reviewable map of the relevant parts of a repository instead of copying files by hand.
-
-It is a Python CLI. You point it at a local repo, describe a task, review the files it suggests and why, and get a Markdown brief with excerpts and source paths. Git history and an optional base ref help prioritize recent or changed files. It makes no AI calls and has no account or hosted service.
-
-It is early, and file selection is heuristic rather than semantic. I would especially like feedback on files it misses or includes unnecessarily. The README has install steps and screenshots: https://github.com/mohamed1111111m/codebase-brief
+Check the current [Show HN guidelines](https://news.ycombinator.com/showhn.html) and [Hacker News guidelines](https://news.ycombinator.com/newsguidelines.html) on launch day. Do not repost if it gets little attention; spend time participating in discussions that interest you instead of using HN primarily for promotion.
 
 ## Short social post
 
