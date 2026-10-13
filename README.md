@@ -56,10 +56,10 @@ If the `brief` command is not available, use `python -m context_inject` while th
 
 When the menu opens, it uses the folder you launched it from as the starting project. Type a number and press Enter:
 
-1. **Build a context brief** — describe the coding task, optionally enter a Git base ref, then accept or change the approximate size limit.
-2. **Choose a different project** — point the tool at another local repository or source folder.
-3. **Help and examples** — see the workflow and an example command.
-0. **Exit** — close the menu.
+- **1 — Build a context brief:** Describe the coding task, optionally enter a Git base ref, then accept or change the approximate size limit.
+- **2 — Choose a different project:** Point the tool at another local repository or source folder.
+- **3 — Help and examples:** See the workflow and an example command.
+- **0 — Exit:** Close the menu.
 
 In plain terms, Codebase Brief makes a small guide to a project so an AI coding assistant can get oriented before helping with a task. It does not write or fix code. It reads project information locally and prepares a guide for you to review and share.
 
