@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.4
+
+- Refresh the package listing with the current first-run instructions, product fit, limitations, and importer-aware `--base` behavior.
+- Link package metadata to the project site and keep source-code and issue links explicit.
+
 ## 0.1.3
 
 - Find task-matching snippets deeper inside selected source files and show their line ranges instead of always starting at the file's beginning.

@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from context_inject.cli import DEFAULT_BUDGET_TOKENS, MAX_CHARS, MAX_FILE_BYTES, MAX_KEY_FILES, choose_files, compact, copy_to_clipboard, gather, interactive, local_imports, main, read_excerpt, read_task_excerpt, redact, review_feedback, safe_path, suggest_file_details, suggest_files
+from context_inject.cli import DEFAULT_BUDGET_TOKENS, MAX_CHARS, MAX_FILE_BYTES, MAX_KEY_FILES, VERSION, choose_files, compact, copy_to_clipboard, gather, interactive, local_imports, main, read_excerpt, read_task_excerpt, redact, review_feedback, safe_path, suggest_file_details, suggest_files
 
 
 class ContextInjectTests(unittest.TestCase):
@@ -501,7 +501,7 @@ class ContextInjectTests(unittest.TestCase):
         plain = __import__("re").sub(r"\x1b\[[0-9;]*m", "", output.getvalue())
         self.assertIn("CODEBASE", plain)
         self.assertIn("BRIEF", plain)
-        self.assertIn("v0.1.3", plain)
+        self.assertIn(f"v{VERSION}", plain)
         self.assertIn("Meet Briefy - your repo guide", plain)
         self.assertIn("WHAT THIS DOES", plain)
         self.assertIn("Makes a short guide to your project for an AI coding assistant", plain)
