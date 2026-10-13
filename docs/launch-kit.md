@@ -20,19 +20,19 @@ Keep the terminal text large enough to read. Prefer a real run over a mockup. If
 
 Hacker News asks that Show HN projects be personally built, usable by visitors, and presented by someone available to discuss them. Edit this in your own voice and include what motivated you to make the tool and what you learned from testing it. Do not ask people to upvote.
 
-**Title:** `Show HN: Codebase Brief – a local CLI that prepares task-focused repo context`
+**Title:** `Show HN: Codebase Brief – a local repo brief for browser-based coding chats`
 
 **Draft:**
 
-I made Codebase Brief because I wanted a repeatable way to give a coding assistant a small, reviewable map of an unfamiliar repository before asking it to change code.
+I made Codebase Brief for browser-based coding chats that cannot inspect my local working tree. I wanted a repeatable way to give one task a small, reviewable map of the relevant parts of a repository instead of copying files by hand.
 
-It is a Python CLI. You point it at a local repo, describe a task, review the files it suggests, and get a Markdown brief with excerpts and source paths. Git history and an optional base ref help prioritize recent or changed files. It makes no AI calls and has no account or hosted service.
+It is a Python CLI. You point it at a local repo, describe a task, review the files it suggests and why, and get a Markdown brief with excerpts and source paths. Git history and an optional base ref help prioritize recent or changed files. It makes no AI calls and has no account or hosted service.
 
 It is early, and file selection is heuristic rather than semantic. I would especially like feedback on files it misses or includes unnecessarily. The README has install steps and screenshots: https://github.com/mohamed1111111m/codebase-brief
 
 ## Short social post
 
-I built Codebase Brief, a local Python CLI that turns a repository + coding task into a compact, reviewable Markdown context brief—with selected file excerpts and source paths.
+When I use a browser-based coding chat, it cannot inspect the repo on my computer. I made Codebase Brief to pick a task-focused set of files, show why they were selected, and prepare a short brief I can review before pasting it into the chat.
 
 No AI calls or account. File selection is heuristic, so I’m looking for developers to try it on a repo they know and tell me what it misses.
 
@@ -48,7 +48,7 @@ Link the README for installation and screenshots. Be available to answer questio
 
 ## Feedback to collect
 
-For each tester, ask:
+For each tester, ask them to use the [tester feedback form](https://github.com/mohamed1111111m/codebase-brief/issues/new?template=tester-feedback.yml). It captures the task, install result, file-selection changes, and whether the brief helped without asking them to share private source code. Ask:
 
 1. What task and repository did you try it on? (They should not share private code.)
 2. Which suggested files were useful, missing, or irrelevant?

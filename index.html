@@ -4,12 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#10131b">
-  <meta name="description" content="Make a compact, reviewable map of a codebase before giving a task to a browser-based coding assistant. A free, local-first Python CLI.">
+  <meta name="description" content="Turn one coding task into a short, reviewable repo brief for browser-based AI chats that cannot inspect your local files. Free, local-first Python CLI.">
   <meta property="og:type" content="website">
-  <meta property="og:title" content="Codebase Brief — give your coding assistant a map">
-  <meta property="og:description" content="Turn a repository and a coding task into a small, reviewable Markdown brief. Local-first, open source, and free.">
+  <meta property="og:title" content="Codebase Brief — repo context for browser AI chats">
+  <meta property="og:description" content="Turn one coding task into a short, reviewable repo brief for browser-based AI chats that cannot inspect your local files.">
   <meta property="og:image" content="https://raw.githubusercontent.com/mohamed1111111m/codebase-brief/main/docs/images/social-preview.png">
-  <title>Codebase Brief — give your coding assistant a map</title>
+  <title>Codebase Brief — repo context for browser AI chats</title>
   <style>
     :root { color-scheme: dark; --bg:#10131b; --panel:#171c27; --ink:#f4f5f7; --muted:#abb3c4; --line:#2a3241; --cyan:#73e0d0; --violet:#a895ff; --gold:#f4c96b; }
     * { box-sizing:border-box; }
@@ -67,11 +67,11 @@
     <main id="top">
       <section class="hero">
         <div>
-          <div class="eyebrow"><span class="dot"></span>A small map before the coding session</div>
-          <h1>Give your coding assistant <span>a map</span> of the repo.</h1>
-          <p class="lead">Starting in a browser chat that can’t see your local files? Codebase Brief turns a repository and a task into a short Markdown guide—with selected excerpts and paths you can check.</p>
-          <div class="actions"><a class="button primary" href="https://pypi.org/project/codebase-brief/">Install free with pipx</a><a class="button" href="https://github.com/mohamed1111111m/codebase-brief">View the source</a></div>
-          <p class="note">Open source · Python 3.10+ · runs locally · no AI account</p>
+          <div class="eyebrow"><span class="dot"></span>For coding chats without local repo access</div>
+          <h1>Share the useful parts of your repo for <span>one coding task.</span></h1>
+          <p class="lead">Codebase Brief reads your local project, suggests files for the task, and gives you a short brief to review and paste into ChatGPT, Claude, or another browser-based coding chat. It shows why files were picked; you decide what to share.</p>
+          <div class="actions"><a class="button primary" href="https://github.com/mohamed1111111m/codebase-brief#install-the-latest-build">Try the latest build</a><a class="button" href="https://github.com/mohamed1111111m/codebase-brief">View the source</a></div>
+          <p class="note">Open source · Python 3.10+ · runs locally · no AI account · latest changes install from GitHub</p>
         </div>
         <div class="terminal" aria-label="Example terminal command">
           <div class="termbar"><i class="light"></i><i class="light"></i><i class="light"></i><span>Terminal · your project folder</span></div>
@@ -90,9 +90,9 @@
         <h2>Three steps, and you stay in control.</h2>
         <p class="sub">It gathers a useful starting point. You review the file suggestions before anything goes to your assistant.</p>
         <div class="steps">
-          <article class="card"><span class="num">01 / POINT</span><h3>Choose a project and task</h3><p>Give it a local folder and a plain-language job, like “find where login errors are handled.”</p></article>
-          <article class="card"><span class="num">02 / REVIEW</span><h3>Keep or change the files</h3><p>See which files it picked and why. Keep the choices, toggle files, or make an overview without excerpts.</p></article>
-          <article class="card"><span class="num">03 / USE</span><h3>Copy the brief into your chat</h3><p>Get a Markdown guide with repository notes, selected snippets, and paths back to their sources.</p></article>
+          <article class="card"><span class="num">01 / DESCRIBE</span><h3>Give it a repo and task</h3><p>For example: “Find where login errors are handled.” Git history can help prioritize recent changes.</p></article>
+          <article class="card"><span class="num">02 / CHECK</span><h3>Review the shortlist</h3><p>See why each file was suggested. Keep, remove, or add files before building the brief.</p></article>
+          <article class="card"><span class="num">03 / HAND OFF</span><h3>Paste it into your chat</h3><p>Give your browser-based assistant source excerpts and paths it could not read from your computer.</p></article>
         </div>
       </section>
 
@@ -102,7 +102,7 @@
       </section>
 
       <section class="section">
-        <div class="closing"><h2>Try it on a repo you already know.</h2><p>Then tell me one file it missed—or one suggestion that didn’t belong.</p><div class="actions" style="justify-content:center"><a class="button primary" href="https://github.com/mohamed1111111m/codebase-brief#get-started">Get started</a><a class="button" href="https://github.com/mohamed1111111m/codebase-brief/issues">Give feedback</a></div></div>
+        <div class="closing"><h2>Try it on a repo you already know.</h2><p>Then share what you kept, removed, or added—and whether the brief helped your assistant.</p><div class="actions" style="justify-content:center"><a class="button primary" href="https://github.com/mohamed1111111m/codebase-brief#install-the-latest-build">Get started</a><a class="button" href="https://github.com/mohamed1111111m/codebase-brief/issues/new?template=tester-feedback.yml">Give tester feedback</a></div></div>
       </section>
     </main>
     <footer><span>Made by Mohamed Maggy · MIT License</span><span><a href="https://github.com/mohamed1111111m/codebase-brief">Source on GitHub</a> · <a href="https://pypi.org/project/codebase-brief/">PyPI</a></span></footer>

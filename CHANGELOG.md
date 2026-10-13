@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Clarify the product's best-fit use case as browser-based coding chats that cannot inspect a local working tree.
+- Add a structured GitHub tester-feedback form for install results, file-selection changes, and task outcomes.
+- Point testers to the current GitHub build when they need unreleased feedback and importer-aware selection features.
 - Add a clear instruction for the receiving assistant to answer the task using the brief as context.
 - Prioritize task-relevant source excerpts ahead of stack details and Git history when the requested budget is small.
 - Let users add a safe repository file by path and print a copyable summary of reviewed file selections.

@@ -1,0 +1,54 @@
+name: Tester feedback
+description: Report which file suggestions helped or missed during a real task.
+title: "[Tester feedback]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for trying Codebase Brief. Please do not include private source code, credentials, or repository paths you do not want public. The selection summary from the end of a run is useful here.
+  - type: textarea
+    id: task
+    attributes:
+      label: What task did you try?
+      description: Describe the task in general terms. Do not include confidential details.
+      placeholder: Trace how a user signs in
+    validations:
+      required: true
+  - type: dropdown
+    id: outcome
+    attributes:
+      label: Did the brief give your assistant enough context to get started?
+      options:
+        - Yes
+        - Partly
+        - No
+        - I did not try it with an assistant
+    validations:
+      required: true
+  - type: textarea
+    id: selection_summary
+    attributes:
+      label: Paste the review summary from Codebase Brief
+      description: It reports files kept, removed, and added. Remove any private paths before posting.
+      render: text
+  - type: textarea
+    id: missed_or_noise
+    attributes:
+      label: What useful files were missing, or what suggestions were irrelevant?
+      description: File names or general descriptions are enough. Do not paste code.
+  - type: dropdown
+    id: install
+    attributes:
+      label: Did installation and first run work?
+      options:
+        - Yes, without trouble
+        - Yes, after troubleshooting
+        - No
+        - Not applicable
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Operating system and Python version
+      placeholder: Windows 11, Python 3.12

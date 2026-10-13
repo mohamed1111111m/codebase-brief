@@ -8,11 +8,11 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![MIT License](https://img.shields.io/badge/license-MIT-8A63D2.svg)](LICENSE)
 
-**Give a coding assistant a clear map of a repository before it starts a task.** Codebase Brief reads a local project and creates a compact Markdown brief with relevant files, recent Git changes, and source paths you can check.
+**Browser-based coding chats cannot see your local repo.** Codebase Brief turns one coding task into a short, reviewable file shortlist—with excerpts, reasons, and source paths—so you can give ChatGPT, Claude, or another chat the project context it cannot inspect itself.
 
-It works locally, without an AI service or account. You choose what to do with the brief: review it, save it, or paste it into Claude Code, Cursor, OpenCode, Codex, or another coding assistant.
+It works locally, without an AI service or account. Review the brief, save it, or paste it into ChatGPT, Claude, or another assistant that cannot inspect your local working tree.
 
-**Best fit:** when your assistant cannot inspect your local files, or when you want a small, reviewable repository brief to carry into another tool. If your coding agent already reads and indexes the working tree, its built-in repo tools may be enough.
+**Best fit:** a browser chat that cannot inspect your local files, or a task where you want to choose exactly what context to share. If your coding agent already reads and indexes the working tree, its built-in repo tools may be enough.
 
 ## See it in action
 
@@ -24,34 +24,32 @@ The first image is a terminal-style rendering of the app's actual numbered menu.
 
 [Watch the 12-second product walkthrough](https://raw.githubusercontent.com/mohamed1111111m/codebase-brief/main/docs/images/product-hunt-demo.mp4).
 
-## Get started
+## Install the latest build
 
-You need Python 3.10 or newer. Git is optional, but it enables recent-history and base-diff details.
+You need Python 3.10 or newer. Git is optional when running the app, but required to install the latest build from GitHub and to use recent-history or base-diff details.
 
-If you already use `pipx`, install the command in one line:
+The current PyPI release is `0.1.0`. The latest GitHub build also includes the reviewed-file feedback summary and importer-aware `--base` selection. To try those changes, install the latest build with `pipx`:
 
 ```powershell
-pipx install codebase-brief
+pipx install --force git+https://github.com/mohamed1111111m/codebase-brief.git
 brief "C:\work\my-app" --task "Trace the login flow" --copy
 ```
 
 The brief is copied to your clipboard for pasting into your assistant. Replace the example path and task with yours. To use the numbered menu, run `brief` with no arguments.
 
-Or install it in a virtual environment:
+If you prefer the published PyPI release, install it instead:
+
+```powershell
+pipx install codebase-brief
+brief
+```
+
+Or use a virtual environment for the published release:
 
 ```powershell
 python -m venv .venv
 .venv\Scripts\Activate.ps1
 python -m pip install --upgrade codebase-brief
-codebase-brief
-```
-
-To try the latest code from GitHub instead:
-
-```powershell
-python -m venv .venv
-.venv\Scripts\Activate.ps1
-python -m pip install git+https://github.com/mohamed1111111m/codebase-brief.git
 codebase-brief
 ```
 
@@ -70,7 +68,7 @@ When the menu opens, it uses the folder you launched it from as the starting pro
 
 In plain terms, Codebase Brief makes a small guide to a project so an AI coding assistant can get oriented before helping with a task. It does not write or fix code. It reads project information locally and prepares a guide for you to review and share.
 
-Before generating the brief, the tool shows suggested files and why they were selected. Press Enter to keep the checked files, type file numbers to toggle selections, or use `add path/to/file.py` to include another safe text file from the repository. Type `none` for an overview without source excerpts. After the brief is shown, saved, or copied, Codebase Brief prints a copyable summary of files kept, removed, added from suggestions, and manually added, so you can share which suggestions helped or missed the mark. The menu's save-here choice writes `context.md` in the folder where you launched the menu; if that is the target repository, the file will be created there. Choose the show or copy option to avoid writing a file into that folder.
+Before generating the brief, the tool shows suggested files and why they were selected. Press Enter to keep the checked files, type file numbers to toggle selections, or use `add path/to/file.py` to include another safe text file from the repository. Type `none` for an overview without source excerpts. After the brief is shown, saved, or copied, Codebase Brief prints a copyable summary of files kept, removed, added from suggestions, and manually added. To help improve file selection, paste that summary into the [tester feedback form](https://github.com/mohamed1111111m/codebase-brief/issues/new?template=tester-feedback.yml) along with your task and whether the brief helped. Do not include private source code or secrets. The menu's save-here choice writes `context.md` in the folder where you launched the menu; if that is the target repository, the file will be created there. Choose the show or copy option to avoid writing a file into that folder.
 
 For your first try, choose a project you know and a task you understand. Check whether the suggested files are the ones you would have shown a coding assistant yourself.
 
@@ -126,5 +124,5 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution notes, [CHANGELOG.md](CH
 
 ## Help shape Codebase Brief
 
-This is an early open-source project. If you try it, feedback about which suggested files were useful or missing is especially helpful. Use [GitHub Issues](https://github.com/mohamed1111111m/codebase-brief/issues) for reproducible bugs and concrete feature requests. The [launch kit](docs/launch-kit.md) has a short demo plan, the [Product Hunt draft](docs/product-hunt-launch.md) contains prepared listing copy, and PyPI setup is in [PYPI_PUBLISHING.md](docs/PYPI_PUBLISHING.md).
+This is an early open-source project. If you try it, the most useful feedback is which suggested files you kept, removed, or added—and whether the resulting brief gave your assistant enough context. Use the [tester feedback form](https://github.com/mohamed1111111m/codebase-brief/issues/new?template=tester-feedback.yml); use [GitHub Issues](https://github.com/mohamed1111111m/codebase-brief/issues) for reproducible bugs and concrete feature requests. The [launch kit](docs/launch-kit.md) has a short demo plan, the [Product Hunt draft](docs/product-hunt-launch.md) contains prepared listing copy, and PyPI setup is in [PYPI_PUBLISHING.md](docs/PYPI_PUBLISHING.md).
 
