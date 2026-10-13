@@ -37,6 +37,8 @@ brief "C:\work\my-app" --task "Trace the login flow" --copy
 
 The brief is copied to your clipboard for pasting into your assistant. Replace the example path and task with yours. To use the numbered menu, run `brief` with no arguments.
 
+If you do not have `pipx` installed, skip the command above and use the virtual-environment steps below instead; they work with the project's minimum Python version. To install `pipx` first, follow its [official installation guide](https://pipx.pypa.io/latest/how-to/install-pipx.html). The current pipx installer requires Python 3.11 or newer, while Codebase Brief itself supports Python 3.10 and newer.
+
 Or use a virtual environment:
 
 ```powershell
