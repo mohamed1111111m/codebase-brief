@@ -43,6 +43,7 @@ jobs:
               raise SystemExit(f"Release tag says {expected}, but wheel is {actual}")
           subprocess.run([".release-venv/bin/codebase-brief", "--help"], check=True, stdout=subprocess.DEVNULL)
           subprocess.run([".release-venv/bin/brief", "--version"], check=True)
+          subprocess.run([".release-venv/bin/brief", "--demo"], check=True, stdout=subprocess.DEVNULL)
           PY
       - name: Publish package
         uses: pypa/gh-action-pypi-publish@release/v1

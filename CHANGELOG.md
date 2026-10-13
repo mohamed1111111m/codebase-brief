@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.2
+
+- Add `brief --demo`, which generates a real example brief from temporary sample files without reading or modifying the user's project.
+- Clarify how to try the demo and install the CLI when pipx is not already available.
+- Show the menu's actual `0` exit key correctly in the README.
+
 ## 0.1.1
 
 - Clarify the product's best-fit use case as browser-based coding chats that cannot inspect a local working tree.

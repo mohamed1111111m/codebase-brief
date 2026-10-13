@@ -222,6 +222,26 @@ class ContextInjectTests(unittest.TestCase):
         self.assertIn("First use:", stdout.getvalue())
         self.assertIn("--budget", stdout.getvalue())
         self.assertIn("--copy", stdout.getvalue())
+        self.assertIn("--demo", stdout.getvalue())
+
+    def test_demo_generates_real_brief_without_reading_or_changing_current_folder(self):
+        output = io.StringIO()
+        before = set(self.root.rglob("*"))
+        with patch("pathlib.Path.cwd", return_value=self.root), contextlib.redirect_stdout(output):
+            self.assertEqual(main(["--demo"]), 0)
+        brief = output.getvalue()
+        self.assertIn("Trace how a sign-in request is checked", brief)
+        self.assertIn("src/sample_shop/auth.py", brief)
+        self.assertIn("src/sample_shop/routes.py", brief)
+        self.assertIn("check_password", brief)
+        self.assertEqual(set(self.root.rglob("*")), before)
+
+    def test_demo_rejects_combined_project_arguments(self):
+        stderr = io.StringIO()
+        with contextlib.redirect_stderr(stderr), self.assertRaises(SystemExit) as error:
+            main([str(self.root), "--demo"])
+        self.assertEqual(error.exception.code, 2)
+        self.assertIn("--demo cannot be combined", stderr.getvalue())
 
     def test_cli_copy_generates_a_brief_and_calls_clipboard(self):
         self.put("README.md", "# Clipboard fixture")
@@ -466,7 +486,7 @@ class ContextInjectTests(unittest.TestCase):
         plain = __import__("re").sub(r"\x1b\[[0-9;]*m", "", output.getvalue())
         self.assertIn("CODEBASE", plain)
         self.assertIn("BRIEF", plain)
-        self.assertIn("v0.1.1", plain)
+        self.assertIn("v0.1.2", plain)
         self.assertIn("Meet Briefy - your repo guide", plain)
         self.assertIn("WHAT THIS DOES", plain)
         self.assertIn("Makes a short guide to your project for an AI coding assistant", plain)

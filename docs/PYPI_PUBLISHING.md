@@ -11,7 +11,7 @@ For each release:
 1. Update the version in `pyproject.toml` and `context_inject/cli.py`.
 2. Move completed changes into a versioned section in `CHANGELOG.md` and check the README install instructions.
 3. Run the local release checks below.
-4. Push the release commit to `main`, then create a GitHub Release with a matching tag such as `v0.1.1`. Publishing the GitHub Release triggers `.github/workflows/publish.yml` to build, validate, and upload the package.
+4. Push the release commit to `main`, then create a GitHub Release with a matching tag such as `v0.1.2`. Publishing the GitHub Release triggers `.github/workflows/publish.yml` to build, validate, and upload the package.
 5. Check the Actions run and the [PyPI project page](https://pypi.org/project/codebase-brief/) to confirm the upload.
 
 PyPI releases are immutable; use a new version number for corrections.

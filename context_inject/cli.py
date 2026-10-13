@@ -11,6 +11,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 CHARS_PER_TOKEN = 4  # rough estimate; real token counts vary by model and text
@@ -23,7 +24,7 @@ MAX_KEY_FILES = 12
 MAX_SELECTION_CHOICES = 30
 MAX_DISCOVERED_FILES = 20_000
 IMPORT_SUFFIXES = {".py", ".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs", ".mts", ".cts"}
-VERSION = "0.1.1"
+VERSION = "0.1.2"
 MANIFESTS = (
     "package.json", "pyproject.toml", "requirements.txt", "Cargo.toml",
     "go.mod", "Gemfile", "composer.json", "pom.xml",
@@ -943,6 +944,46 @@ def terminal_supports_color() -> bool:
         return False
 
 
+DEMO_TASK = "Trace how a sign-in request is checked"
+DEMO_FILES = {
+    "README.md": (
+        "# Sample Shop\n\n"
+        "A tiny example storefront. Its sign-in route checks a password through a small auth helper.\n"
+    ),
+    "pyproject.toml": (
+        "[project]\nname = 'sample-shop'\nversion = '0.1.0'\n"
+        "requires-python = '>=3.10'\ndependencies = []\n"
+    ),
+    "src/sample_shop/auth.py": (
+        "def check_password(saved_password: str, supplied_password: str) -> bool:\n"
+        "    return saved_password == supplied_password\n"
+    ),
+    "src/sample_shop/routes.py": (
+        "from .auth import check_password\n\n"
+        "def sign_in(saved_password: str, supplied_password: str) -> str:\n"
+        "    if check_password(saved_password, supplied_password):\n"
+        "        return 'Welcome back'\n"
+        "    return 'Password did not match'\n"
+    ),
+    "tests/test_auth.py": (
+        "from sample_shop.auth import check_password\n\n"
+        "def test_matching_password_is_accepted():\n"
+        "    assert check_password('correct horse', 'correct horse')\n"
+    ),
+}
+
+
+def generate_demo_brief() -> str:
+    """Generate a real sample brief without reading or changing the user's project."""
+    with tempfile.TemporaryDirectory(prefix="codebase-brief-demo-") as temporary:
+        root = Path(temporary)
+        for relative, content in DEMO_FILES.items():
+            path = root / relative
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(content, encoding="utf-8")
+        return gather(root, DEMO_TASK, budget_tokens=1_200)
+
+
 def interactive() -> int:
     """Run the guided, numbered terminal interface."""
     repo = Path.cwd().resolve()
@@ -1036,6 +1077,7 @@ def interactive() -> int:
             print("\nA base ref only helps when your current Git commit differs from that ref. Matching covers static imports, literal dynamic imports, and simple TS/JS aliases; runtime-built names may be missed.")
             print(f"The default guide size is about {DEFAULT_BUDGET_TOKENS:,} tokens ({CHARS_PER_TOKEN} characters per token, roughly).")
             print("Save creates a Markdown file; copy puts the guide on your clipboard only when you choose it.")
+            print("Run 'brief --demo' to see a sample brief without using your project.")
             print('\nExample: codebase-brief "C:\\work\\my-app" --task "Find login handling" --base main --budget 2400 --copy')
             input("\nPress Enter to return to the menu...")
             continue
@@ -1135,7 +1177,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--output", help="Write Markdown to this path (default: stdout)")
     parser.add_argument("--copy", action="store_true", help="Copy the generated Markdown to your system clipboard")
     parser.add_argument("-i", "--interactive", action="store_true", help="Open the numbered interactive menu")
+    parser.add_argument("--demo", action="store_true", help="Print a real sample brief without reading your project")
     args = parser.parse_args(argv)
+    if args.demo:
+        if args.interactive or args.repo_path or args.task or args.base or args.output or args.copy or args.budget != DEFAULT_BUDGET_TOKENS:
+            parser.error("--demo cannot be combined with repo_path, --task, --base, --budget, --output, --copy, or --interactive")
+        print("Preview from a built-in sample project. Your project folder was not read or changed.\n")
+        sys.stdout.write(generate_demo_brief())
+        return 0
     if args.interactive:
         if args.repo_path or args.task or args.base or args.output or args.copy or args.budget != DEFAULT_BUDGET_TOKENS:
             parser.error("--interactive cannot be combined with repo_path, --task, --base, --budget, --output, or --copy")

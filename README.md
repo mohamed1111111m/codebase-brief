@@ -28,7 +28,7 @@ The first image is a terminal-style rendering of the app's actual numbered menu.
 
 You need Python 3.10 or newer. Git is optional, but required for recent-history and base-diff details.
 
-The current PyPI release is `0.1.1` and includes the reviewed-file feedback summary and importer-aware `--base` selection. Install it with `pipx`:
+The current PyPI release is `0.1.2` and includes the review-feedback summary, importer-aware `--base` selection, and a sample demo. Install it with `pipx`:
 
 ```powershell
 pipx install codebase-brief
@@ -36,6 +36,8 @@ brief "C:\work\my-app" --task "Trace the login flow" --copy
 ```
 
 The brief is copied to your clipboard for pasting into your assistant. Replace the example path and task with yours. To use the numbered menu, run `brief` with no arguments.
+
+Want to see a real example before choosing your project? Run `brief --demo`. It uses a tiny temporary example project and does not read or change your files.
 
 If you do not have `pipx` installed, skip the command above and use the virtual-environment steps below instead; they work with the project's minimum Python version. To install `pipx` first, follow its [official installation guide](https://pipx.pypa.io/latest/how-to/install-pipx.html). The current pipx installer requires Python 3.11 or newer, while Codebase Brief itself supports Python 3.10 and newer.
 
